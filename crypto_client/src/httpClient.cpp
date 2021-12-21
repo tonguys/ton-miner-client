@@ -137,10 +137,8 @@ namespace crypto {
     }
 
     HTTPClient::~HTTPClient() = default;
-    HTTPClient::HTTPClient(HTTPClient&&) noexcept = default;
-    HTTPClient& HTTPClient::operator=(HTTPClient&&) noexcept = default;
 
-    std::optional<response::UserInfo> HTTPClient::Register(std::string_view token) {
+    std::optional<response::UserInfo> HTTPClient::doRegister(std::string_view token) {
         auto resp = pImpl->Register(token);
     
         std::optional<response::UserInfo> res = std::nullopt;
@@ -152,19 +150,19 @@ namespace crypto {
         return res;
     }
 
-    std::optional<response::Task> HTTPClient::GetTask() {
+    std::optional<response::Task> HTTPClient::doGetTask() {
         auto resp = pImpl->GetTask();
 
         std::optional<response::Task> res = std::nullopt;
         std::visit(overload{
             [](const response::Err& err) {
-                spdlog::critical("Can`t get tesk: code ({}), msg: {}", err.code, err.msg);
+                spdlog::critical("Can`t get task: code ({}), msg: {}", err.code, err.msg);
             },
             [&res](const response::Task& info) {res = info;} }, resp);
         return res;
     }
 
-    std::optional<response::AnswerStatus> HTTPClient::SendAnswer(const response::Answer &answer) {
+    std::optional<response::AnswerStatus> HTTPClient::doSendAnswer(const response::Answer &answer) {
         auto resp = pImpl->SendAnswer(answer);
 
         std::optional<response::AnswerStatus> res = std::nullopt;

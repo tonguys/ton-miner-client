@@ -26,6 +26,7 @@ add_library(clientLib
     src/app.hpp
     src/executor.cpp
     src/executor.hpp
+    src/client.hpp
     src/httpClient.cpp
     src/httpClient.hpp
     src/responses.cpp

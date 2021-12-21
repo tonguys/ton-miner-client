@@ -4,31 +4,26 @@
 #include <optional>
 
 #include "responses.hpp"
+#include "client.hpp"
 
 #ifndef HTTP_CLIENT_HPP
 #define HTTP_CLIENT_HPP
 
 namespace crypto {
-    class HTTPClient {
+    class HTTPClient final: public Client {
         class HTTPClientImpl;
 
         private:
         std::unique_ptr<HTTPClientImpl> pImpl;
 
         public: 
-        HTTPClient(std::string_view); 
-        ~HTTPClient();
+        explicit HTTPClient(std::string_view); 
+        ~HTTPClient() final;
 
-        HTTPClient(HTTPClient&) = delete;
-        HTTPClient(HTTPClient&&) noexcept;
-
-        HTTPClient& operator=(HTTPClient&) = delete;
-        HTTPClient& operator=(HTTPClient&&) noexcept;
-
-        public:
-        std::optional<response::UserInfo> Register(std::string_view);
-        std::optional<response::Task> GetTask();
-        std::optional<response::AnswerStatus> SendAnswer(const response::Answer &answer);
+        private:
+        std::optional<response::UserInfo> doRegister(std::string_view token) final;
+        std::optional<response::Task> doGetTask() final;
+        std::optional<response::AnswerStatus> doSendAnswer(const response::Answer &answer) final;
 
         };
 }

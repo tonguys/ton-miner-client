@@ -3,9 +3,11 @@
 #include <string>
 #include <variant>
 #include <optional>
+#include <memory>
 
 #include "app.hpp"
 
+#include "client.hpp"
 #include "httpClient.hpp"
 #include "executor.hpp"
 
@@ -19,9 +21,10 @@ template<class... Ts> overload(Ts...) -> overload<Ts...>;
 }
 
 int run(std::string &&token) {
-    HTTPClient client("");
+    //TODO: fill url
+    std::unique_ptr<Client> client = std::make_unique<HTTPClient>("");
 
-    auto auth = client.Register(token);
+    auto auth = client->Register(token);
     if (!auth) {
         std::cout << "Registration failed, inspect logs for details." << std::endl;
         return 1;
@@ -35,7 +38,7 @@ int run(std::string &&token) {
     while (true) {
         std::optional<crypto::response::Task> task;
         if (shouldRequestNewTask) {
-            task = client.GetTask();
+            task = client->GetTask();
             if (!task) {
                std::cout << "Can`t get new task from server, inspect logs for details." << std::endl;
                 return 1;
@@ -62,7 +65,7 @@ int run(std::string &&token) {
         }
 
         if (answer) {
-            auto status = client.SendAnswer(answer.value());
+            auto status = client->SendAnswer(answer.value());
             if (!status) {
                 std::cout << "Cant send answer, inspect logs for details" << std::endl;
                 return 2;
