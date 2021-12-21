@@ -1,6 +1,10 @@
 #include "executor.hpp"
+#include "boost/exception/exception.hpp"
+#include "boost/process/exception.hpp"
 #include "responses.hpp"
 
+#include <exception>
+#include <future>
 #include <istream>
 #include <sstream>
 #include <string>
@@ -10,6 +14,9 @@
 #include "boost/process/io.hpp"
 #include "boost/process/pipe.hpp"
 #include "boost/asio.hpp"
+#include "boost/asio/streambuf.hpp"
+#include "fmt/format.h"
+#include "spdlog/spdlog.h"
 
 namespace crypto {
 
@@ -20,7 +27,7 @@ class Executor::ExecutorImpl {
     std::string path;
 
     public:
-    ExecutorImpl(std::string_view _path): 
+    explicit ExecutorImpl(std::string_view _path): 
         path(_path) {};
     ~ExecutorImpl() = default;
 
@@ -33,35 +40,55 @@ class Executor::ExecutorImpl {
     public:
     exec_res::ExecRes Exec(const response::Task &task) {
         boost::asio::io_service ios;
-        std::vector<char> buf;
+        std::future<std::string> outData;
+        boost::asio::streambuf errData;
 
-        bp::group g;
-        bp::child ch(path, g, bp::std_out > boost::asio::buffer(buf), ios);
+        bp::child ch(path,
+        bp::std_in.close(),
+        bp::std_err > errData,
+        bp::std_out > outData,
+        ios);
+
         ios.run();
-
-        if (!g.wait_until(task.expires)) {
-            g.terminate();
-            g.wait();
+        auto status =  outData.wait_until(task.expires);
+        if (status == std::future_status::timeout) {
+            ch.terminate();
+            ch.wait();
             return exec_res::Timeout{};
         }
-        int code = ch.exit_code();
+
+        auto out = outData.get();
+        std::string err((std::istreambuf_iterator<char>(&errData)), std::istreambuf_iterator<char>(nullptr));
+        spdlog::info("Miner stdout:\n{}", out);
+        spdlog::info("Miner stderr:\n{}", err);
+
+        ch.wait();
+        auto code = ch.exit_code();
         if (code != 0) {
             return exec_res::Crash{code};
         }
 
-        response::Answer answer;
-        // TODO: read buf, parse and fill up answer
-        return exec_res::Ok{answer};
+        return exec_res::Ok{};
     }
 
 };
 
 Executor::Executor(std::string_view _path): 
-    pImpl(std::make_unique<ExecutorImpl>(path))
+    pImpl(std::make_unique<ExecutorImpl>(_path))
     {}
 
 exec_res::ExecRes Executor::Exec(const response::Task &task) {
-    return pImpl->Exec(task);
+    try {
+        spdlog::info("Exec miner");
+        return pImpl->Exec(task);
+    } catch (boost::process::process_error &e) {
+        spdlog::error("Exec got boost exception: {}; code: {}", e.what(), e.code().message());
+    } catch (std::exception &e) {
+        spdlog::error("Exec got exception: {}", e.what());
+    } catch (...) {
+        spdlog::error("Exec got unknown exception");
+    }
+    return exec_res::Crash{-1};
 }
 
 Executor::~Executor() = default;

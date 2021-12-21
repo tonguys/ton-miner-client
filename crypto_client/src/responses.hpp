@@ -25,7 +25,11 @@ using RegisterResponse = std::variant<Err, UserInfo>;
 
 //get/task
 struct Task {
-    std::chrono::time_point<std::chrono::system_clock> expires;
+    std::string seed;
+    std::string complexity;
+    std::string giver_address;
+    std::string pool_address;
+    std::chrono::time_point<std::chrono::steady_clock> expires;
 };
 using TaskResponse = std::variant<Err, Task>;
 

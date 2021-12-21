@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <filesystem>
 
 #include "responses.hpp"
 
@@ -29,10 +30,11 @@ class Executor {
 
     private:
     std::unique_ptr<ExecutorImpl> pImpl;
-    std::string path;
 
     public:
     explicit Executor(std::string_view);
+    explicit Executor(std::filesystem::path& _path): Executor(_path.string()) {};
+
     ~Executor();
 
     Executor(Executor&) = delete;

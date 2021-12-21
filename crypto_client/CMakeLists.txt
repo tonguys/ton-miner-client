@@ -27,6 +27,7 @@ add_library(clientLib
     src/executor.cpp
     src/executor.hpp
     src/client.hpp
+    src/mockClient.hpp
     src/httpClient.cpp
     src/httpClient.hpp
     src/responses.cpp
