@@ -20,8 +20,42 @@ struct Ok {
 };
 
 // get/register
-struct UserInfo {};
+struct UserInfo {
+    std::string pool_address;
+    std::string user_address;
+    long shares;
+};
 using RegisterResponse = std::variant<Err, UserInfo>;
+
+namespace util {
+using namespace std::chrono;
+
+class Timestamp {
+    private:
+    long unix;
+
+    public:
+    Timestamp() = default;
+    explicit Timestamp(long unix_timestamp): unix(unix_timestamp) {}
+    explicit Timestamp(time_point<steady_clock> tp) {
+        unix = duration_cast<seconds>(tp.time_since_epoch()).count();
+    }
+
+    Timestamp& operator=(const Timestamp&) = default;
+    Timestamp& operator=(Timestamp&&) = default;
+    Timestamp(const Timestamp&) = default;
+    Timestamp(Timestamp&&) = default;
+    ~Timestamp() = default;
+
+    long GetUnix() const {
+        return unix;
+    }
+    auto GetChrono() const {
+        return time_point<steady_clock>{seconds{unix}};
+    }
+};
+
+}
 
 //get/task
 struct Task {
@@ -29,14 +63,19 @@ struct Task {
     std::string complexity;
     std::string giver_address;
     std::string pool_address;
-    std::chrono::time_point<std::chrono::steady_clock> expires;
+    util::Timestamp expires;
 };
 using TaskResponse = std::variant<Err, Task>;
 
 //post/send_answer
-struct AnswerStatus {};
+struct AnswerStatus {
+    bool accepted;
+};
 using SendAnswerResponse = std::variant<Err, AnswerStatus>;
-struct Answer {};
+struct Answer {
+    std::string boc;
+    std::string giver_address;
+};
 
 
 using json = nlohmann::json;

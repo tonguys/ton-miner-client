@@ -9,16 +9,25 @@
 namespace crypto::mock {
 
 auto inline defaultUserInfo() {
-    return response::UserInfo{};
+    return response::UserInfo{
+        "pool_address",
+        "user_address",
+        10 };
 }
 
 auto inline defaultTask() {
-    auto expires = std::chrono::system_clock::now() + std::chrono::seconds(5);
-    return response::Task{ expires };
+    auto expires = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    return response::Task{
+        "100000",
+        "100000",
+        "giver_address",
+        "pool_address",
+        response::util::Timestamp(expires)};
 }
 
 auto inline defaultAnswerStatus() {
-    return response::AnswerStatus{};
+    return response::AnswerStatus{
+        true };
 }
 
 class MockClient final: public Client {

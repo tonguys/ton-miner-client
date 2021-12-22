@@ -18,7 +18,6 @@
 #include "spdlog/spdlog.h"
 
 namespace crypto {
-
     namespace {
         template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
         template<class... Ts> overload(Ts...) -> overload<Ts...>;
@@ -61,7 +60,7 @@ namespace crypto {
         HTTPClientImpl& operator=(HTTPClientImpl&&) = delete;
 
         private:
-        Response processResponse(httplib::Result &res, int expectedCode) {
+        static Response processResponse(httplib::Result &res, int expectedCode) {
             if (!res) {
                 auto err = res.error();
                 std::stringstream ss;

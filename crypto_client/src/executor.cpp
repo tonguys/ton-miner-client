@@ -22,9 +22,14 @@ namespace crypto {
 
 namespace bp = boost::process; 
 
+namespace {
+    
+}
+
 class Executor::ExecutorImpl {
     private:
     std::string path;
+    inline static const char* const resName = "mined.boc";
 
     public:
     explicit ExecutorImpl(std::string_view _path): 
@@ -37,20 +42,39 @@ class Executor::ExecutorImpl {
     ExecutorImpl& operator=(ExecutorImpl&) = delete;
     ExecutorImpl& operator=(ExecutorImpl&&) = delete;
 
+    private:
+    static std::string taskToArgs(const response::Task &t) {
+        // TODO: conigurable -g option
+        const long long iterations = 100000000000;
+        return fmt::format(
+            "-g 0 -e {} {} {} {} {} {} {}",
+            t.expires.GetUnix(),
+            t.giver_address,
+            t.seed,
+            t.complexity,
+            iterations,
+            t.giver_address,
+            resName);
+    }
+
     public:
     exec_res::ExecRes Exec(const response::Task &task) {
         boost::asio::io_service ios;
         std::future<std::string> outData;
         boost::asio::streambuf errData;
 
-        bp::child ch(path,
-        bp::std_in.close(),
-        bp::std_err > errData,
-        bp::std_out > outData,
-        ios);
+        auto args = taskToArgs(task);
+        spdlog::info("Miner args: {}", args); 
+        bp::child ch(
+            path,
+            args,
+            bp::std_in.close(),
+            bp::std_err > errData,
+            bp::std_out > outData,
+            ios);
 
         ios.run();
-        auto status =  outData.wait_until(task.expires);
+        auto status =  outData.wait_until(task.expires.GetChrono());
         if (status == std::future_status::timeout) {
             ch.terminate();
             ch.wait();
