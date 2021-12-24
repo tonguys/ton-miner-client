@@ -122,7 +122,7 @@ namespace crypto {
             try {
                 std::string path = fmt::format("/api/v1/send_answer?auth_token={}", token);
                 nlohmann::json request = a;
-                auto res = client.Post(path.c_str(), request, "application/json");
+                auto res = client.Post(path.c_str(), request.dump(), "application/json");
                 auto processed = processResponse(res, 202);
             
                 response::SendAnswerResponse resp;

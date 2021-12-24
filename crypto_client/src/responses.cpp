@@ -45,7 +45,7 @@ std::string Dump(const AnswerStatus &status) {
 }
 
 std::string Dump(const Answer &answer) {
-    return fmt::format("Answer{{giver: {}, boc: NOT_LOGGED}}", answer.giver_address);
+    return fmt::format("Answer{{giver: {}, boc: {}}}", answer.giver_address, answer.boc);
 }
 
 template <class T>

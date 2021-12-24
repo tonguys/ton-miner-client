@@ -69,7 +69,7 @@ int run(std::string &&token) {
                 execCrashesCount = 0;
             },
             [&execCrashesCount, &shouldRequestNewTask](const exec_res::Crash &c){
-                spdlog::warn("Miner crashed; code: {}", c.code);
+                spdlog::warn("Miner crashed: {}", Dump(c));
                 execCrashesCount++;
                 shouldRequestNewTask = false; 
             },
