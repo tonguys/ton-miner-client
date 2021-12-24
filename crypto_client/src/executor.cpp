@@ -1,13 +1,18 @@
 #include "executor.hpp"
 #include "boost/exception/exception.hpp"
 #include "boost/process/exception.hpp"
+#include "openssl/bio.h"
 #include "responses.hpp"
 
 #include <exception>
+#include <filesystem>
+#include <fstream>
 #include <future>
+#include <ios>
 #include <istream>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include "boost/process.hpp"
 #include "boost/process/detail/child_decl.hpp"
@@ -22,89 +27,68 @@ namespace crypto {
 
 namespace bp = boost::process; 
 
-namespace {
-    
+std::string Executor::taskToArgs(const response::Task &t) {
+    // TODO: conigurable -g option
+    const long long iterations = 100000000000;
+    return fmt::format(
+        "-g 0 -e {} {} {} {} {} {} {}",
+        t.expires.GetUnix(),
+        t.giver_address,
+        t.seed,
+        t.complexity,
+        iterations,
+        t.giver_address,
+        resName);
 }
 
-class Executor::ExecutorImpl {
-    private:
-    std::string path;
-    inline static const char* const resName = "mined.boc";
+exec_res::ExecRes Executor::ExecImpl(const response::Task &task) {
+    boost::asio::io_service ios;
+    std::future<std::string> outData;
+    boost::asio::streambuf errData;
 
-    public:
-    explicit ExecutorImpl(std::string_view _path): 
-        path(_path) {};
-    ~ExecutorImpl() = default;
+    auto args = taskToArgs(task);
+    spdlog::info("Miner args: {}", args); 
+    bp::child ch(
+        path.string(),
+        args,
+        bp::std_in.close(),
+        bp::std_err > errData,
+        bp::std_out > outData,
+        ios);
 
-    ExecutorImpl(ExecutorImpl&) = delete;
-    ExecutorImpl(ExecutorImpl&&) = delete;
-
-    ExecutorImpl& operator=(ExecutorImpl&) = delete;
-    ExecutorImpl& operator=(ExecutorImpl&&) = delete;
-
-    private:
-    static std::string taskToArgs(const response::Task &t) {
-        // TODO: conigurable -g option
-        const long long iterations = 100000000000;
-        return fmt::format(
-            "-g 0 -e {} {} {} {} {} {} {}",
-            t.expires.GetUnix(),
-            t.giver_address,
-            t.seed,
-            t.complexity,
-            iterations,
-            t.giver_address,
-            resName);
-    }
-
-    public:
-    exec_res::ExecRes Exec(const response::Task &task) {
-        boost::asio::io_service ios;
-        std::future<std::string> outData;
-        boost::asio::streambuf errData;
-
-        auto args = taskToArgs(task);
-        spdlog::info("Miner args: {}", args); 
-        bp::child ch(
-            path,
-            args,
-            bp::std_in.close(),
-            bp::std_err > errData,
-            bp::std_out > outData,
-            ios);
-
-        ios.run();
-        auto status =  outData.wait_until(task.expires.GetChrono());
-        if (status == std::future_status::timeout) {
-            ch.terminate();
-            ch.wait();
-            return exec_res::Timeout{};
-        }
-
-        auto out = outData.get();
-        std::string err((std::istreambuf_iterator<char>(&errData)), std::istreambuf_iterator<char>(nullptr));
-        spdlog::info("Miner stdout:\n{}", out);
-        spdlog::info("Miner stderr:\n{}", err);
-
+    ios.run();
+    auto status =  outData.wait_until(task.expires.GetChrono());
+    if (status == std::future_status::timeout) {
+        ch.terminate();
         ch.wait();
-        auto code = ch.exit_code();
-        if (code != 0) {
-            return exec_res::Crash{code};
-        }
-
-        return exec_res::Ok{};
+        return exec_res::Timeout{};
     }
 
-};
+    auto out = outData.get();
+    std::string err((std::istreambuf_iterator<char>(&errData)), std::istreambuf_iterator<char>(nullptr));
+    spdlog::info("Miner stdout:\n{}", out);
+    spdlog::info("Miner stderr:\n{}", err);
 
-Executor::Executor(std::string_view _path): 
-    pImpl(std::make_unique<ExecutorImpl>(_path))
-    {}
+    ch.wait();
+    auto code = ch.exit_code();
+    if (code != 0) {
+        return exec_res::Crash{"non-nil exit code", code};
+    }
+
+    if (!AnswerExists()) {
+        return exec_res::Crash{"can`t locate boc file", -1};
+    }
+
+    response::Answer answer;
+    answer.giver_address = task.giver_address;
+    answer.boc = GetAnswer();
+    return exec_res::Ok{answer};
+}
 
 exec_res::ExecRes Executor::Exec(const response::Task &task) {
     try {
         spdlog::info("Exec miner");
-        return pImpl->Exec(task);
+        return ExecImpl(task);
     } catch (boost::process::process_error &e) {
         spdlog::error("Exec got boost exception: {}; code: {}", e.what(), e.code().message());
     } catch (std::exception &e) {
@@ -112,9 +96,19 @@ exec_res::ExecRes Executor::Exec(const response::Task &task) {
     } catch (...) {
         spdlog::error("Exec got unknown exception");
     }
-    return exec_res::Crash{-1};
+    return exec_res::Crash{};
 }
 
-Executor::~Executor() = default;
+bool Executor::AnswerExists() {
+    return std::filesystem::exists(result_path);
+}
+
+std::string Executor::GetAnswer() {
+    // TODO: maybe optimize
+    std::ifstream file(result_path, std::ios::binary | std::ios::in);
+    std::ostringstream tmp;
+    tmp << file.rdbuf();
+    return tmp.str();
+}
 
 }

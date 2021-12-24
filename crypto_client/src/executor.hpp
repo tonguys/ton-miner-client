@@ -6,6 +6,8 @@
 
 #include "responses.hpp"
 
+#include "fmt/format.h"
+
 #ifndef EXECUTOR_HPP
 #define EXECUTOR_HPP
 
@@ -15,6 +17,7 @@ namespace exec_res {
 struct Timeout {};
 
 struct Crash {
+    std::string msg;
     int code;
 };
 
@@ -23,19 +26,34 @@ struct Ok {
 };
 
 using ExecRes = std::variant<Timeout, Crash, Ok>;
+
+inline std::string Dump([[maybe_unused]] const Timeout &time) {
+    return fmt::format("Timeout{{}}");
+}
+
+inline std::string Dump(const Crash &crash) {
+    return fmt::format("Crash{{code:{}, msg:{}}}", crash.code, crash.msg);
+}
+
+inline std::string Dump(const Ok &ok) {
+    return fmt::format("Ok{{answer:{}}}", Dump(ok.answer));
+}
+
 }
 
 class Executor {
-    class ExecutorImpl;
-
     private:
-    std::unique_ptr<ExecutorImpl> pImpl;
+    std::filesystem::path path;
+    std::filesystem::path result_path;
+    inline static const char* const resName = "mined.boc";
 
     public:
-    explicit Executor(std::string_view);
-    explicit Executor(std::filesystem::path& _path): Executor(_path.string()) {};
+    explicit Executor(std::filesystem::path _path): path(std::move(_path)) {
+        result_path = path.parent_path() / resName;
+    };
+    explicit Executor(std::string_view _path): Executor(std::filesystem::path(_path)) {};
 
-    ~Executor();
+    ~Executor() = default;
 
     Executor(Executor&) = delete;
     Executor(Executor&&) = delete;
@@ -43,8 +61,14 @@ class Executor {
     Executor& operator=(Executor&) = delete;
     Executor& operator=(Executor&&) = delete;
 
+    private:
+    static std::string taskToArgs(const response::Task &t);
+    exec_res::ExecRes ExecImpl(const response::Task &task);
+
     public:
     exec_res::ExecRes Exec(const response::Task &task);
+    bool AnswerExists();
+    std::string GetAnswer();
 };
 
 }
