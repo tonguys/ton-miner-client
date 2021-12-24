@@ -4,11 +4,61 @@
 #include <chrono>
 #include <cstddef>
 #include <string>
+#include <iostream>
+#include <type_traits>
 
-
-#include "spdlog/spdlog.h"
+#include "fmt/format.h"
 
 namespace crypto::response {
+
+std::string Dump(const Err &e) {
+    return fmt::format("Err{{code: {}, msg:{}}}", e.code, e.msg);
+}
+
+std::string Dump([[maybe_unused]] const Ok &ok) {
+    // we will not print body, as internal json
+    // 1) Possibly may contain sensitive info
+    // 2) Likely will be logged after json unpacking to struct
+    return fmt::format("Ok");
+}
+
+std::string Dump(const UserInfo &info) {
+    return fmt::format(
+        "UserInfo{{user_addres: {}, pool_address: {}, shares: {}}}",
+        info.user_address,
+        info.pool_address,
+        info.shares);
+}
+
+std::string Dump(const Task &task) {
+    return fmt::format(
+        "Tasl{{complexity: {}, expires: {}, giver: {}, pool: {}, seed: {}}}",
+        task.complexity,
+        task.expires.GetUnix(),
+        task.giver_address,
+        task.pool_address,
+        task.seed);
+}
+
+std::string Dump(const AnswerStatus &status) {
+    return fmt::format("Status{{accepted: {}}}", status.accepted);
+}
+
+std::string Dump(const Answer &answer) {
+    return fmt::format("Answer{{giver: {}, boc: NOT_LOGGED}}", answer.giver_address);
+}
+
+template <class T>
+typename std::enable_if<std::is_same<decltype(Dump(T{})), std::string>::value, std::ostream&>::type 
+operator<<(std::ostream &os, const T &x) {
+	os << Dump(x);
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, Answer &answer) {
+    std:: cout << Dump(answer);
+    return os;
+}
 
 void to_json(json& j, const UserInfo &info) {
     j["pool_address"] = info.pool_address;
@@ -23,7 +73,6 @@ void from_json(const json& j, UserInfo &info) {
 }
 
 void to_json(json& j, const Task &task) {
-    using namespace std::chrono;
     j.at("seed") = task.seed;
     j.at("complexity") = task.complexity;
     j.at("giver_address") = task.giver_address;

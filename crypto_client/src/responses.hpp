@@ -77,6 +77,12 @@ struct Answer {
     std::string giver_address;
 };
 
+std::string Dump(const Err&);
+std::string Dump(const Ok&);
+std::string Dump(const UserInfo&);
+std::string Dump(const Task&);
+std::string Dump(const AnswerStatus&);
+std::string Dump(const Answer&);
 
 using json = nlohmann::json;
 
