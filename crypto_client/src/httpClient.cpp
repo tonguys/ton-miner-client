@@ -39,14 +39,17 @@ namespace crypto {
 
     class HTTPClient::HTTPClientImpl {
         private:
-        httplib::SSLClient client;
+        httplib::Client client;
+        std::string token;
 
         public:
         using Response = std::variant<
             response::Err,
             response::Ok>;
 
-        explicit HTTPClientImpl(std::string_view url): client(url.data()) {
+        explicit HTTPClientImpl(std::string_view url, std::string_view _token): 
+            client(url.data()),
+            token(_token) {
             client.set_default_headers({
                 { "accept", "application/json"},
             });
@@ -78,9 +81,9 @@ namespace crypto {
                 ret.msg = "server returned non-200 code";
                 return ret;
             }
-
+            
             // TODO: check this string -> json conversion about safety/exceptions and so
-            return response::Ok{res->body};
+            return response::Ok{ nlohmann::json::parse(res->body) };
         }
 
         public:
@@ -93,10 +96,9 @@ namespace crypto {
             };
         }
 
-        response::RegisterResponse Register(std::string_view token) {
-            std::string request = fmt::format("/register?token={}", token);
+        response::RegisterResponse Register() {
+            std::string request = fmt::format("/api/v1/register?auth_token={}", token);
             auto res = Get(request);
-            std::fill(std::begin(request), std::end(request), 'a');
 
             response::RegisterResponse resp;
             std::visit(overload{
@@ -106,7 +108,9 @@ namespace crypto {
         }
 
         response::TaskResponse GetTask() {
-            auto res = Get("/task");
+            std::string request = fmt::format("/api/v1/task?auth_token={}", token);
+            auto res = Get(request);
+            
             response::TaskResponse resp;
             std::visit(overload{
                 [&resp](const response::Err &err){ resp = err; },
@@ -116,8 +120,9 @@ namespace crypto {
 
         response::SendAnswerResponse SendAnswer(const response::Answer &a) {
             try {
+                std::string path = fmt::format("/api/v1/send_answer?auth_token={}", token);
                 nlohmann::json request = a;
-                auto res = client.Post("/send_answer", request, "application/json");
+                auto res = client.Post(path.c_str(), request, "application/json");
                 auto processed = processResponse(res, 202);
             
                 response::SendAnswerResponse resp;
@@ -132,13 +137,13 @@ namespace crypto {
 
     };
 
-    HTTPClient::HTTPClient(std::string_view url): pImpl(std::make_unique<HTTPClientImpl>(url)) {
+    HTTPClient::HTTPClient(std::string_view url, std::string_view token): pImpl(std::make_unique<HTTPClientImpl>(url, token)) {
     }
 
     HTTPClient::~HTTPClient() = default;
 
-    std::optional<response::UserInfo> HTTPClient::doRegister(std::string_view token) {
-        auto resp = pImpl->Register(token);
+    std::optional<response::UserInfo> HTTPClient::doRegister() {
+        auto resp = pImpl->Register();
     
         std::optional<response::UserInfo> res = std::nullopt;
         std::visit(overload{

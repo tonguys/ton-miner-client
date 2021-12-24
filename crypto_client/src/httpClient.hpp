@@ -15,13 +15,14 @@ namespace crypto {
 
         private:
         std::unique_ptr<HTTPClientImpl> pImpl;
+        std::string token;
 
         public: 
-        explicit HTTPClient(std::string_view); 
+        explicit HTTPClient(std::string_view, std::string_view); 
         ~HTTPClient() final;
 
         private:
-        std::optional<response::UserInfo> doRegister(std::string_view token) final;
+        std::optional<response::UserInfo> doRegister() final;
         std::optional<response::Task> doGetTask() final;
         std::optional<response::AnswerStatus> doSendAnswer(const response::Answer &answer) final;
 

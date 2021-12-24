@@ -9,7 +9,7 @@
 #include "app.hpp"
 
 #include "client.hpp"
-#include "mockClient.hpp"
+#include "httpClient.hpp"
 #include "executor.hpp"
 
 #include "spdlog/common.h"
@@ -28,12 +28,12 @@ int run(std::string &&token) {
     spdlog::set_level(spdlog::level::debug);
 
     //TODO: fill url
-    std::string url("url");
+    std::string url("test-server1.tonguys.com:8080");
     spdlog::info("Starting with url {}", url);
 
-    std::unique_ptr<Client> client = std::make_unique<mock::MockClient>(url);
+    std::unique_ptr<Client> client = std::make_unique<HTTPClient>(url, token);
 
-    auto auth = client->Register(token);
+    auto auth = client->Register();
     if (!auth) {
         spdlog::critical("Registration failed, inspect logs for details");
         return 1;

@@ -39,7 +39,7 @@ class MockClient final: public Client {
     ~MockClient() final = default;
 
     private:
-    std::optional<response::UserInfo> doRegister([[maybe_unused]] std::string_view token) final {
+    std::optional<response::UserInfo> doRegister() final {
         return defaultUserInfo();
     };
     std::optional<response::Task> doGetTask() final {

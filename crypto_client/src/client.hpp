@@ -10,7 +10,7 @@ namespace crypto {
 
 class Client {
     private:
-    virtual std::optional<response::UserInfo> doRegister(std::string_view) = 0;
+    virtual std::optional<response::UserInfo> doRegister() = 0;
     virtual std::optional<response::Task> doGetTask() = 0;
     virtual std::optional<response::AnswerStatus> doSendAnswer(const response::Answer&) = 0;
 
@@ -26,8 +26,8 @@ class Client {
     virtual ~Client() = default;
 
     public:
-    std::optional<response::UserInfo> Register(std::string_view path) {
-        return doRegister(path);
+    std::optional<response::UserInfo> Register() {
+        return doRegister();
     }
     std::optional<response::Task> GetTask() {
         return doGetTask();

@@ -6,6 +6,8 @@
 #include <string>
 
 
+#include "spdlog/spdlog.h"
+
 namespace crypto::response {
 
 void to_json(json& j, const UserInfo &info) {
@@ -15,18 +17,18 @@ void to_json(json& j, const UserInfo &info) {
 }
 
 void from_json(const json& j, UserInfo &info) {
-    j["pool_address"].get_to(info.pool_address);
-    j["user_address"].get_to(info.user_address);
-    j["shares"].get_to(info.shares);
+    j.at("pool_address").get_to(info.pool_address);
+    j.at("user_address").get_to(info.user_address);
+    j.at("shares").get_to(info.shares);
 }
 
 void to_json(json& j, const Task &task) {
     using namespace std::chrono;
-    j["seed"] = task.seed;
-    j["complexity"] = task.complexity;
-    j["giver_address"] = task.giver_address;
-    j["pool_address"] = task.pool_address;
-    j["expires"] = std::to_string(task.expires.GetUnix());
+    j.at("seed") = task.seed;
+    j.at("complexity") = task.complexity;
+    j.at("giver_address") = task.giver_address;
+    j.at("pool_address") = task.pool_address;
+    j.at("expires") = std::to_string(task.expires.GetUnix());
 }
 
 void from_json(const json& j, Task &task) {
@@ -35,9 +37,9 @@ void from_json(const json& j, Task &task) {
     j.at("giver_address").get_to(task.giver_address);
     j.at("pool_address").get_to(task.pool_address);
 
-    std::string tmp;
+    long tmp = 0;
     j.at("expires").get_to(tmp);
-    task.expires = util::Timestamp(std::stol(tmp));
+    task.expires = util::Timestamp(tmp);
 }
 
 namespace {
