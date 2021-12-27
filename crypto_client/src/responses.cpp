@@ -6,8 +6,10 @@
 #include <string>
 #include <iostream>
 #include <type_traits>
+#include <vector>
 
 #include "fmt/format.h"
+#include "cppcodec/base64_rfc4648.hpp"
 
 namespace crypto::response {
 
@@ -45,7 +47,7 @@ std::string Dump(const AnswerStatus &status) {
 }
 
 std::string Dump(const Answer &answer) {
-    return fmt::format("Answer{{giver: {}, boc: {}}}", answer.giver_address, answer.boc);
+    return fmt::format("Answer{{giver: {}, boc: {}}}", answer.giver_address, fmt::join(answer.boc, ""));
 }
 
 template <class T>
@@ -115,13 +117,18 @@ void from_json(const json& j, AnswerStatus &status) {
 }
 
 void to_json(json& j, const Answer &answer) {
-    j["boc_data"] = answer.boc;
+    using codec = cppcodec::base64_rfc4648;
+    j["boc_data"] = codec::encode(answer.boc);
     j["giver_address"] = answer.giver_address;
 }
 
 void from_json(const json& j, Answer &answer) {
-    j["boc_data"].get_to(answer.boc);
+    using codec = cppcodec::base64_rfc4648;
     j["giver_address"].get_to(answer.giver_address);
+
+    std::vector<Answer::Byte> tmp;
+    j["boc_data"].get_to(tmp);
+    answer.boc = codec::decode(tmp);
 }
 
 }

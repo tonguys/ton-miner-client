@@ -3,6 +3,7 @@
 #include <memory>
 #include <variant>
 #include <filesystem>
+#include <vector>
 
 #include "responses.hpp"
 
@@ -63,12 +64,12 @@ class Executor {
 
     private:
     static std::string taskToArgs(const response::Task &t);
+    bool AnswerExists();
+    std::vector<response::Answer::Byte> GetAnswer();
     exec_res::ExecRes ExecImpl(const response::Task &task);
 
     public:
     exec_res::ExecRes Exec(const response::Task &task);
-    bool AnswerExists();
-    std::string GetAnswer();
 };
 
 }

@@ -82,6 +82,7 @@ exec_res::ExecRes Executor::ExecImpl(const response::Task &task) {
     response::Answer answer;
     answer.giver_address = task.giver_address;
     answer.boc = GetAnswer();
+    spdlog::debug(response::Dump(answer));
     return exec_res::Ok{answer};
 }
 
@@ -103,12 +104,11 @@ bool Executor::AnswerExists() {
     return std::filesystem::exists(result_path);
 }
 
-std::string Executor::GetAnswer() {
-    // TODO: maybe optimize
+std::vector <response::Answer::Byte> Executor::GetAnswer() {
     std::ifstream file(result_path, std::ios::binary | std::ios::in);
-    std::ostringstream tmp;
-    tmp << file.rdbuf();
-    return tmp.str();
+    return std::vector<response::Answer::Byte>(
+        std::istreambuf_iterator<char>(file),
+        std::istreambuf_iterator<char>());
 }
 
 }

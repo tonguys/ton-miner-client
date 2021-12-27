@@ -1,6 +1,8 @@
+#include <cstdint>
 #include <string>
 #include <variant>
 #include <chrono>
+#include <vector>
 
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
@@ -73,7 +75,8 @@ struct AnswerStatus {
 };
 using SendAnswerResponse = std::variant<Err, AnswerStatus>;
 struct Answer {
-    std::string boc;
+    using Byte = uint8_t;
+    std::vector<Byte> boc;
     std::string giver_address;
 };
 

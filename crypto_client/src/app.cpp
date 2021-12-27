@@ -28,7 +28,7 @@ int run(std::string &&token) {
     spdlog::set_level(spdlog::level::debug);
 
     //TODO: fill url
-    std::string url("test-server1.tonguys.com:8080");
+    std::string url("test-server1.tonguys.com");
     spdlog::info("Starting with url {}", url);
 
     std::unique_ptr<Client> client = std::make_unique<HTTPClient>(url, token);

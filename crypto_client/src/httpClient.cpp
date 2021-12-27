@@ -39,7 +39,7 @@ namespace crypto {
 
     class HTTPClient::HTTPClientImpl {
         private:
-        httplib::Client client;
+        httplib::SSLClient client;
         std::string token;
 
         public:
@@ -122,6 +122,7 @@ namespace crypto {
             try {
                 std::string path = fmt::format("/api/v1/send_answer?auth_token={}", token);
                 nlohmann::json request = a;
+                spdlog::debug("Sending answer: {}", request.dump());
                 auto res = client.Post(path.c_str(), request.dump(), "application/json");
                 auto processed = processResponse(res, 202);
             
