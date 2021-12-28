@@ -9,7 +9,7 @@
 namespace crypto::mock {
 
 auto inline defaultUserInfo() {
-    return response::UserInfo{
+    return model::UserInfo{
         "pool_address",
         "user_address",
         10 };
@@ -17,16 +17,16 @@ auto inline defaultUserInfo() {
 
 auto inline defaultTask() {
     auto expires = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    return response::Task{
+    return model::Task{
         "100000",
         "100000",
         "giver_address",
         "pool_address",
-        response::util::Timestamp(expires)};
+        model::util::Timestamp(expires)};
 }
 
 auto inline defaultAnswerStatus() {
-    return response::AnswerStatus{
+    return model::AnswerStatus{
         true };
 }
 
@@ -39,13 +39,13 @@ class MockClient final: public Client {
     ~MockClient() final = default;
 
     private:
-    std::optional<response::UserInfo> doRegister() final {
+    std::optional<model::UserInfo> doRegister() final {
         return defaultUserInfo();
     };
-    std::optional<response::Task> doGetTask() final {
+    std::optional<model::Task> doGetTask() final {
         return defaultTask();
     };
-    std::optional<response::AnswerStatus> doSendAnswer([[maybe_unused]] const response::Answer &answer) final {
+    std::optional<model::AnswerStatus> doSendAnswer([[maybe_unused]] const model::Answer &answer) final {
         return defaultAnswerStatus();
     };
 };

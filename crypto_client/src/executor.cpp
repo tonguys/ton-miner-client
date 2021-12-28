@@ -2,7 +2,7 @@
 #include "boost/exception/exception.hpp"
 #include "boost/process/exception.hpp"
 #include "openssl/bio.h"
-#include "responses.hpp"
+#include "models.hpp"
 
 #include <exception>
 #include <filesystem>
@@ -27,7 +27,7 @@ namespace crypto {
 
 namespace bp = boost::process; 
 
-std::string Executor::taskToArgs(const response::Task &t) {
+std::string Executor::taskToArgs(const model::Task &t) {
     // TODO: conigurable -g option
     const long long iterations = 100000000000;
     return fmt::format(
@@ -41,7 +41,7 @@ std::string Executor::taskToArgs(const response::Task &t) {
         resName);
 }
 
-exec_res::ExecRes Executor::ExecImpl(const response::Task &task) {
+exec_res::ExecRes Executor::ExecImpl(const model::Task &task) {
     boost::asio::io_service ios;
     std::future<std::string> outData;
     boost::asio::streambuf errData;
@@ -79,14 +79,14 @@ exec_res::ExecRes Executor::ExecImpl(const response::Task &task) {
         return exec_res::Crash{"can`t locate boc file", -1};
     }
 
-    response::Answer answer;
+    model::Answer answer;
     answer.giver_address = task.giver_address;
     answer.boc = GetAnswer();
-    spdlog::debug(response::Dump(answer));
+    spdlog::debug(model::Dump(answer));
     return exec_res::Ok{answer};
 }
 
-exec_res::ExecRes Executor::Exec(const response::Task &task) {
+exec_res::ExecRes Executor::Exec(const model::Task &task) {
     try {
         spdlog::info("Exec miner");
         return ExecImpl(task);
@@ -104,9 +104,9 @@ bool Executor::AnswerExists() {
     return std::filesystem::exists(result_path);
 }
 
-std::vector <response::Answer::Byte> Executor::GetAnswer() {
+std::vector <model::Answer::Byte> Executor::GetAnswer() {
     std::ifstream file(result_path, std::ios::binary | std::ios::in);
-    return std::vector<response::Answer::Byte>(
+    return std::vector<model::Answer::Byte>(
         std::istreambuf_iterator<char>(file),
         std::istreambuf_iterator<char>());
 }

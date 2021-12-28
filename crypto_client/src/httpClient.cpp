@@ -1,6 +1,6 @@
 #include "httpClient.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "responses.hpp"
+#include "models.hpp"
 
 #include <exception>
 #include <iterator>
@@ -24,16 +24,16 @@ namespace crypto {
     }
 
     namespace  {
-        response::Err exceptionToErr() {
+        model::Err exceptionToErr() {
             auto eptr = std::current_exception();
             try {
                 if (eptr) {
                     std::rethrow_exception(eptr);
                 }
             } catch (std::exception &e) {
-                return response::Err{-1, fmt::format("exception thrown: {}", e.what())};
+                return model::Err{-1, fmt::format("exception thrown: {}", e.what())};
             }
-            return response::Err{-1, "unknown exception thrown"};
+            return model::Err{-1, "unknown exception thrown"};
         }
     }
 
@@ -44,8 +44,8 @@ namespace crypto {
 
         public:
         using Response = std::variant<
-            response::Err,
-            response::Ok>;
+            model::Err,
+            model::Ok>;
 
         explicit HTTPClientImpl(std::string_view url, std::string_view _token): 
             client(url.data()),
@@ -69,21 +69,21 @@ namespace crypto {
                 std::stringstream ss;
                 ss << err;
 
-                response::Err ret;
+                model::Err ret;
                 ret.code = -1;
                 ret.msg = ss.str();
                 return ret;
             }
 
             if (res->status != expectedCode) {
-                response::Err ret;
+                model::Err ret;
                 ret.code = res->status;
                 ret.msg = "server returned non-200 code";
                 return ret;
             }
             
             // TODO: check this string -> json conversion about safety/exceptions and so
-            return response::Ok{ nlohmann::json::parse(res->body) };
+            return model::Ok{ nlohmann::json::parse(res->body) };
         }
 
         public:
@@ -96,29 +96,29 @@ namespace crypto {
             };
         }
 
-        response::RegisterResponse Register() {
+        model::RegisterResponse Register() {
             std::string request = fmt::format("/api/v1/register?auth_token={}", token);
             auto res = Get(request);
 
-            response::RegisterResponse resp;
+            model::RegisterResponse resp;
             std::visit(overload{
-                [&resp](const response::Err &err){ resp = err; },
-                [&resp](const response::Ok &ok){ resp = ok.body; }}, res);
+                [&resp](const model::Err &err){ resp = err; },
+                [&resp](const model::Ok &ok){ resp = ok.body; }}, res);
             return resp;
         }
 
-        response::TaskResponse GetTask() {
+        model::TaskResponse GetTask() {
             std::string request = fmt::format("/api/v1/task?auth_token={}", token);
             auto res = Get(request);
             
-            response::TaskResponse resp;
+            model::TaskResponse resp;
             std::visit(overload{
-                [&resp](const response::Err &err){ resp = err; },
-                [&resp](const response::Ok &ok){ resp = ok.body; }}, res);
+                [&resp](const model::Err &err){ resp = err; },
+                [&resp](const model::Ok &ok){ resp = ok.body; }}, res);
             return resp;
         }
 
-        response::SendAnswerResponse SendAnswer(const response::Answer &a) {
+        model::SendAnswerResponse SendAnswer(const model::Answer &a) {
             try {
                 std::string path = fmt::format("/api/v1/send_answer?auth_token={}", token);
                 nlohmann::json request = a;
@@ -126,10 +126,10 @@ namespace crypto {
                 auto res = client.Post(path.c_str(), request.dump(), "application/json");
                 auto processed = processResponse(res, 202);
             
-                response::SendAnswerResponse resp;
+                model::SendAnswerResponse resp;
                 std::visit(overload{
-                    [&resp](const response::Err &err){ resp = err; },
-                    [&resp](const response::Ok &ok){ resp = ok.body; }}, processed);
+                    [&resp](const model::Err &err){ resp = err; },
+                    [&resp](const model::Ok &ok){ resp = ok.body; }}, processed);
                 return resp;;
             } catch (...) {
                 return exceptionToErr();
@@ -143,39 +143,39 @@ namespace crypto {
 
     HTTPClient::~HTTPClient() = default;
 
-    std::optional<response::UserInfo> HTTPClient::doRegister() {
+    std::optional<model::UserInfo> HTTPClient::doRegister() {
         auto resp = pImpl->Register();
     
-        std::optional<response::UserInfo> res = std::nullopt;
+        std::optional<model::UserInfo> res = std::nullopt;
         std::visit(overload{
-            [](const response::Err& err) {
+            [](const model::Err& err) {
                 spdlog::critical("Can`t register: code ({}), msg: {}", err.code, err.msg);
             },
-            [&res](const response::UserInfo& info) {res = info;} }, resp);
+            [&res](const model::UserInfo& info) {res = info;} }, resp);
         return res;
     }
 
-    std::optional<response::Task> HTTPClient::doGetTask() {
+    std::optional<model::Task> HTTPClient::doGetTask() {
         auto resp = pImpl->GetTask();
 
-        std::optional<response::Task> res = std::nullopt;
+        std::optional<model::Task> res = std::nullopt;
         std::visit(overload{
-            [](const response::Err& err) {
+            [](const model::Err& err) {
                 spdlog::critical("Can`t get task: code ({}), msg: {}", err.code, err.msg);
             },
-            [&res](const response::Task& info) {res = info;} }, resp);
+            [&res](const model::Task& info) {res = info;} }, resp);
         return res;
     }
 
-    std::optional<response::AnswerStatus> HTTPClient::doSendAnswer(const response::Answer &answer) {
+    std::optional<model::AnswerStatus> HTTPClient::doSendAnswer(const model::Answer &answer) {
         auto resp = pImpl->SendAnswer(answer);
 
-        std::optional<response::AnswerStatus> res = std::nullopt;
+        std::optional<model::AnswerStatus> res = std::nullopt;
         std::visit(overload{
-            [](const response::Err& err) {
+            [](const model::Err& err) {
                 spdlog::critical("Can`t send answer: code ({}), msg: {}", err.code, err.msg);
             },
-            [&res](const response::AnswerStatus& info) {res = info;} }, resp);
+            [&res](const model::AnswerStatus& info) {res = info;} }, resp);
         return res;
     }
 }

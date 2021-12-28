@@ -3,7 +3,7 @@
 #include <string_view>
 #include <optional>
 
-#include "responses.hpp"
+#include "models.hpp"
 #include "client.hpp"
 
 #ifndef HTTP_CLIENT_HPP
@@ -22,9 +22,9 @@ namespace crypto {
         ~HTTPClient() final;
 
         private:
-        std::optional<response::UserInfo> doRegister() final;
-        std::optional<response::Task> doGetTask() final;
-        std::optional<response::AnswerStatus> doSendAnswer(const response::Answer &answer) final;
+        std::optional<model::UserInfo> doRegister() final;
+        std::optional<model::Task> doGetTask() final;
+        std::optional<model::AnswerStatus> doSendAnswer(const model::Answer &answer) final;
 
         };
 }

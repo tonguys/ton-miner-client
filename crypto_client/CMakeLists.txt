@@ -24,15 +24,14 @@ endif()
 add_library(clientLib
     src/app.cpp
     src/app.hpp
-    src/config.hpp
     src/executor.cpp
     src/executor.hpp
     src/client.hpp
     src/mockClient.hpp
     src/httpClient.cpp
     src/httpClient.hpp
-    src/responses.cpp
-    src/responses.hpp)
+    src/models.cpp
+    src/models.hpp)
 target_include_directories(clientLib PUBLIC src)
 target_link_libraries(clientLib ${CONAN_LIBS})
 

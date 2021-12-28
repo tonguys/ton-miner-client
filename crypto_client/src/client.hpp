@@ -1,7 +1,7 @@
 #include <optional>
 #include <string_view>
 
-#include "responses.hpp"
+#include "models.hpp"
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
@@ -10,9 +10,9 @@ namespace crypto {
 
 class Client {
     private:
-    virtual std::optional<response::UserInfo> doRegister() = 0;
-    virtual std::optional<response::Task> doGetTask() = 0;
-    virtual std::optional<response::AnswerStatus> doSendAnswer(const response::Answer&) = 0;
+    virtual std::optional<model::UserInfo> doRegister() = 0;
+    virtual std::optional<model::Task> doGetTask() = 0;
+    virtual std::optional<model::AnswerStatus> doSendAnswer(const model::Answer&) = 0;
 
 
     public:
@@ -26,13 +26,13 @@ class Client {
     virtual ~Client() = default;
 
     public:
-    std::optional<response::UserInfo> Register() {
+    std::optional<model::UserInfo> Register() {
         return doRegister();
     }
-    std::optional<response::Task> GetTask() {
+    std::optional<model::Task> GetTask() {
         return doGetTask();
     }
-    std::optional<response::AnswerStatus> SendAnswer(const response::Answer &answer) {
+    std::optional<model::AnswerStatus> SendAnswer(const model::Answer &answer) {
         return doSendAnswer(answer);
     }
 

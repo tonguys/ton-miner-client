@@ -1,14 +1,14 @@
 
 #include <string>
 
-#include "config.hpp"
+#include "models.hpp"
 
 #ifndef APP_HPP
 #define APP_HPP
 
 namespace crypto {
 
-int run(const cfg::Config &cfg);
+int run(const model::Config &cfg);
 
 }
 

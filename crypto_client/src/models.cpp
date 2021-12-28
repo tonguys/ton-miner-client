@@ -1,8 +1,9 @@
-#include "responses.hpp"
+#include "models.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
+#include <ostream>
 #include <string>
 #include <iostream>
 #include <type_traits>
@@ -12,7 +13,7 @@
 #include "cppcodec/base64_rfc4648.hpp"
 #include "spdlog/spdlog.h"
 
-namespace crypto::response {
+namespace crypto::model {
 
 std::string Dump(const Err &e) {
     return fmt::format("Err{{code: {}, msg:{}}}", e.code, e.msg);
@@ -51,16 +52,11 @@ std::string Dump(const Answer &answer) {
     return fmt::format("Answer{{giver: {}, boc: {}}}", answer.giver_address, fmt::join(answer.boc, ""));
 }
 
-template <class T>
-typename std::enable_if<std::is_same<decltype(Dump(T{})), std::string>::value, std::ostream&>::type 
-operator<<(std::ostream &os, const T &x) {
-	os << Dump(x);
-	return os;
-}
-
-std::ostream& operator<<(std::ostream& os, Answer &answer) {
-    std:: cout << Dump(answer);
-    return os;
+std::string Dump(const Config &cfg) {
+    return fmt::format(
+        "Config{{url:{}, logLevel:{}, token:NOT_PRINTED}}",
+        cfg.url,
+        cfg.logLevel);
 }
 
 void to_json(json& j, const UserInfo &info) {

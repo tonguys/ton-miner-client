@@ -6,11 +6,13 @@
 
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "spdlog/spdlog.h"
+#include "fmt/format.h"
 
 #ifndef MODELS_HPP
 #define MODELS_HPP
 
-namespace crypto::response {
+namespace crypto::model {
 
 struct Err {
     int code;
@@ -80,12 +82,71 @@ struct Answer {
     std::string giver_address;
 };
 
+struct Config {
+    std::string token;
+    std::string url;
+    spdlog::level::level_enum logLevel;
+
+    template <class ...Args>
+    explicit Config(Args ...args) {
+        (args.Set(*this), ...);
+    }
+};
+
+class TokenOption {
+    std::string data;
+
+    public:
+    void Set(Config &cfg) {
+        cfg.token = std::move(data);
+    }
+
+    TokenOption& operator=(std::string token) {
+        data = std::move(token);
+        return *this;
+    }
+};
+
+class UrlOption {
+    std::string data;
+
+    public:
+    void Set(Config &cfg) {
+        cfg.url = std::move(data);
+    }
+
+    UrlOption& operator=(std::string url) {
+        data = std::move(url);
+        return *this;
+    }
+};
+
+class LogLevelOption {
+    spdlog::level::level_enum data;
+
+    public:
+    void Set(Config &cfg) {
+        cfg.logLevel = data;
+    }
+
+    LogLevelOption& operator=(spdlog::level::level_enum level) {
+        data = level;
+        return *this;
+    }
+};
+
+inline TokenOption Token;
+inline UrlOption Url;
+inline LogLevelOption LogLevel;
+
+
 std::string Dump(const Err&);
 std::string Dump(const Ok&);
 std::string Dump(const UserInfo&);
 std::string Dump(const Task&);
 std::string Dump(const AnswerStatus&);
 std::string Dump(const Answer&);
+std::string Dump(const Config&);
 
 using json = nlohmann::json;
 
@@ -101,6 +162,12 @@ void from_json(const json& j, AnswerStatus &status);
 void to_json(json& j, const Answer &answer);
 void from_json(const json& j, Answer &answer);
 
+template <class T>
+inline typename std::enable_if<std::is_same<decltype(Dump(T{})), std::string>::value, std::ostream&>::type 
+operator<<(std::ostream &os, const T &x) {
+	os << Dump(x);
+	return os;
+}
 
 }
 

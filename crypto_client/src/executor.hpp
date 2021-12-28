@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <vector>
 
-#include "responses.hpp"
+#include "models.hpp"
 
 #include "fmt/format.h"
 
@@ -23,7 +23,7 @@ struct Crash {
 };
 
 struct Ok {
-    response::Answer answer;
+    model::Answer answer;
 };
 
 using ExecRes = std::variant<Timeout, Crash, Ok>;
@@ -63,13 +63,13 @@ class Executor {
     Executor& operator=(Executor&&) = delete;
 
     private:
-    static std::string taskToArgs(const response::Task &t);
+    static std::string taskToArgs(const model::Task &t);
     bool AnswerExists();
-    std::vector<response::Answer::Byte> GetAnswer();
-    exec_res::ExecRes ExecImpl(const response::Task &task);
+    std::vector<model::Answer::Byte> GetAnswer();
+    exec_res::ExecRes ExecImpl(const model::Task &task);
 
     public:
-    exec_res::ExecRes Exec(const response::Task &task);
+    exec_res::ExecRes Exec(const model::Task &task);
 };
 
 }

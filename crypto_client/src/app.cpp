@@ -18,16 +18,17 @@
 namespace crypto {
 
 namespace {
-
 template<class... Ts> struct overload : Ts... { using Ts::operator()...; };
 template<class... Ts> overload(Ts...) -> overload<Ts...>;
-
 }
 
-int run(const cfg::Config &cfg) {
+int run(const model::Config &cfg) {
     spdlog::set_level(cfg.logLevel);
 
     spdlog::info("Starting with {}", Dump(cfg));
+
+    std::cout << cfg << std::endl;
+    return 0;
 
     std::unique_ptr<Client> client = std::make_unique<HTTPClient>(cfg.url, cfg.token);
 
@@ -45,7 +46,7 @@ int run(const cfg::Config &cfg) {
     
     int execCrashesCount = 0;
     bool shouldRequestNewTask = true;
-    std::optional<crypto::response::Task> task;
+    std::optional<crypto::model::Task> task;
 
     while (true) {
         if (shouldRequestNewTask) {
@@ -58,9 +59,9 @@ int run(const cfg::Config &cfg) {
         }
         shouldRequestNewTask = true;
 
-        spdlog::debug("Execing miner with task: {}", response::Dump(task.value()));
+        spdlog::debug("Execing miner with task: {}", model::Dump(task.value()));
         auto res = exec.Exec(task.value());
-        std::optional<response::Answer> answer = std::nullopt;
+        std::optional<model::Answer> answer = std::nullopt;
         std::visit(overload{
             [&execCrashesCount](exec_res::Timeout){ 
                 spdlog::info("Miner timeout");
