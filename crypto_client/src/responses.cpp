@@ -10,6 +10,7 @@
 
 #include "fmt/format.h"
 #include "cppcodec/base64_rfc4648.hpp"
+#include "spdlog/spdlog.h"
 
 namespace crypto::response {
 
@@ -34,7 +35,7 @@ std::string Dump(const UserInfo &info) {
 
 std::string Dump(const Task &task) {
     return fmt::format(
-        "Tasl{{complexity: {}, expires: {}, giver: {}, pool: {}, seed: {}}}",
+        "Task{{complexity: {}, expires: {}, giver: {}, pool: {}, seed: {}}}",
         task.complexity,
         task.expires.GetUnix(),
         task.giver_address,

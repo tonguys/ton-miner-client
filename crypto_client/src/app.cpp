@@ -24,14 +24,12 @@ template<class... Ts> overload(Ts...) -> overload<Ts...>;
 
 }
 
-int run(std::string &&token) {
-    spdlog::set_level(spdlog::level::debug);
+int run(const cfg::Config &cfg) {
+    spdlog::set_level(cfg.logLevel);
 
-    //TODO: fill url
-    std::string url("test-server1.tonguys.com");
-    spdlog::info("Starting with url {}", url);
+    spdlog::info("Starting with {}", Dump(cfg));
 
-    std::unique_ptr<Client> client = std::make_unique<HTTPClient>(url, token);
+    std::unique_ptr<Client> client = std::make_unique<HTTPClient>(cfg.url, cfg.token);
 
     auto auth = client->Register();
     if (!auth) {
@@ -60,7 +58,7 @@ int run(std::string &&token) {
         }
         shouldRequestNewTask = true;
 
-        spdlog::debug("Execing miner...");
+        spdlog::debug("Execing miner with task: {}", response::Dump(task.value()));
         auto res = exec.Exec(task.value());
         std::optional<response::Answer> answer = std::nullopt;
         std::visit(overload{

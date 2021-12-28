@@ -24,6 +24,7 @@ endif()
 add_library(clientLib
     src/app.cpp
     src/app.hpp
+    src/config.hpp
     src/executor.cpp
     src/executor.hpp
     src/client.hpp
