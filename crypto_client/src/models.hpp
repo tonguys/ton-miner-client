@@ -1,16 +1,23 @@
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <chrono>
 #include <vector>
+#include <map>
 
 #include "nlohmann/json.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 #include "fmt/format.h"
 
 #ifndef MODELS_HPP
 #define MODELS_HPP
+
+#define _REGISTER_LOG_LEVEL(level) levels[#level] = level
 
 namespace crypto::model {
 
@@ -88,7 +95,8 @@ struct Config {
     spdlog::level::level_enum logLevel;
 
     template <class ...Args>
-    explicit Config(Args ...args) {
+    explicit constexpr Config(Args ...args) {
+        static_assert(sizeof...(args) == 3, "Not correct number of arguments in Config");
         (args.Set(*this), ...);
     }
 };
@@ -124,6 +132,27 @@ class UrlOption {
 class LogLevelOption {
     spdlog::level::level_enum data;
 
+    private:
+    static spdlog::level::level_enum toLevel(const std::string &level) {
+        using namespace spdlog::level;
+        std::map<std::string, level_enum> levels;
+        _REGISTER_LOG_LEVEL(trace);
+        _REGISTER_LOG_LEVEL(debug);
+        _REGISTER_LOG_LEVEL(info);
+        _REGISTER_LOG_LEVEL(warn);
+        _REGISTER_LOG_LEVEL(err);
+        _REGISTER_LOG_LEVEL(critical);
+        _REGISTER_LOG_LEVEL(off);
+
+        assert(levels.size() == n_levels);
+
+        auto it = levels.find(level);
+        if (it == levels.end()) {
+            return debug;
+        }
+        return it->second;
+    }
+
     public:
     void Set(Config &cfg) {
         cfg.logLevel = data;
@@ -132,6 +161,10 @@ class LogLevelOption {
     LogLevelOption& operator=(spdlog::level::level_enum level) {
         data = level;
         return *this;
+    }
+
+    LogLevelOption& operator=(const std::string &level) {
+        return *this = toLevel(level);
     }
 };
 

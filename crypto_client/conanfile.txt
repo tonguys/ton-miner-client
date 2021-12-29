@@ -6,6 +6,7 @@ fmt/8.0.1
 spdlog/1.9.2
 boost/1.77.0
 cppcodec/0.2
+lyra/1.6.0
 
 [generators]
 cmake

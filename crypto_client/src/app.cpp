@@ -10,6 +10,7 @@
 
 #include "client.hpp"
 #include "httpClient.hpp"
+#include "mockClient.hpp"
 #include "executor.hpp"
 
 #include "spdlog/common.h"
@@ -28,9 +29,8 @@ int run(const model::Config &cfg) {
     spdlog::info("Starting with {}", Dump(cfg));
 
     std::cout << cfg << std::endl;
-    return 0;
 
-    std::unique_ptr<Client> client = std::make_unique<HTTPClient>(cfg.url, cfg.token);
+    std::unique_ptr<Client> client = std::make_unique<mock::MockClient>(cfg.url, cfg.token);
 
     auto auth = client->Register();
     if (!auth) {
