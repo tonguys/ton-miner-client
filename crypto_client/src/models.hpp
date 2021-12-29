@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <variant>
+#include <optional>
 #include <chrono>
 #include <vector>
 #include <map>
@@ -129,29 +130,29 @@ class UrlOption {
     }
 };
 
+// TODO: This may be done in compile time: make it constexpr, write static map, use static_assert
+inline std::optional<spdlog::level::level_enum> ToLevel(const std::string &level) {
+    using namespace spdlog::level;
+    std::map<std::string, level_enum> levels;
+    _REGISTER_LOG_LEVEL(trace);
+    _REGISTER_LOG_LEVEL(debug);
+    _REGISTER_LOG_LEVEL(info);
+    _REGISTER_LOG_LEVEL(warn);
+    _REGISTER_LOG_LEVEL(err);
+    _REGISTER_LOG_LEVEL(critical);
+    _REGISTER_LOG_LEVEL(off);
+
+    assert(levels.size() == n_levels);
+
+    auto it = levels.find(level);
+    if (it == levels.end()) {
+        return std::nullopt;
+    }
+    return it->second;
+}
+
 class LogLevelOption {
     spdlog::level::level_enum data;
-
-    private:
-    static spdlog::level::level_enum toLevel(const std::string &level) {
-        using namespace spdlog::level;
-        std::map<std::string, level_enum> levels;
-        _REGISTER_LOG_LEVEL(trace);
-        _REGISTER_LOG_LEVEL(debug);
-        _REGISTER_LOG_LEVEL(info);
-        _REGISTER_LOG_LEVEL(warn);
-        _REGISTER_LOG_LEVEL(err);
-        _REGISTER_LOG_LEVEL(critical);
-        _REGISTER_LOG_LEVEL(off);
-
-        assert(levels.size() == n_levels);
-
-        auto it = levels.find(level);
-        if (it == levels.end()) {
-            return debug;
-        }
-        return it->second;
-    }
 
     public:
     void Set(Config &cfg) {
@@ -164,7 +165,7 @@ class LogLevelOption {
     }
 
     LogLevelOption& operator=(const std::string &level) {
-        return *this = toLevel(level);
+        return *this = ToLevel(level).value_or(spdlog::level::debug);
     }
 };
 
