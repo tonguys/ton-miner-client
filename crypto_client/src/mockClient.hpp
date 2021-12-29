@@ -35,7 +35,7 @@ class MockClient final: public Client {
     std::string url;
 
     public:
-    explicit MockClient([[maybe_unused]] std::string_view url) {};
+    explicit MockClient([[maybe_unused]] std::string_view url,[[maybe_unused]] std::string_view token) {};
     ~MockClient() final = default;
 
     private:
