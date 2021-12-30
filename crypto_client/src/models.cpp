@@ -16,7 +16,11 @@
 namespace crypto::model {
 
 std::string Dump(const Err &e) {
-    return fmt::format("Err{{code: {}, msg:{}}}", e.code, e.msg);
+    return fmt::format(
+        "Err{{code: {}, msg:{}, body: {}}}",
+        e.code,
+        e.msg,
+        e.body.value_or("(no body)"));
 }
 
 std::string Dump([[maybe_unused]] const Ok &ok) {

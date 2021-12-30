@@ -28,7 +28,7 @@ int run(const model::Config &cfg) {
 
     spdlog::info("Starting with {}", cfg);
 
-    std::unique_ptr<Client> client = std::make_unique<mock::MockClient>(cfg.url, cfg.token);
+    std::unique_ptr<Client> client = std::make_unique<HTTPClient>(cfg.url, cfg.token);
 
     auto auth = client->Register();
     if (!auth) {

@@ -25,6 +25,9 @@
 namespace crypto::model {
 
 struct Err {
+    // we will not map server error responses into any type,
+    // couze we only need to log it, json string we do the trick
+    std::optional<std::string> body;
     int code;
     std::string msg;
 };

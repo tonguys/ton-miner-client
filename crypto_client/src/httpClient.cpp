@@ -11,6 +11,7 @@
 #include <variant>
 #include <optional>
 #include <algorithm>
+#include <array>
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"
@@ -30,12 +31,14 @@ namespace crypto {
                 if (eptr) {
                     std::rethrow_exception(eptr);
                 }
+            } catch  (nlohmann::json::exception &e) {
+                return model::Err{std::nullopt, -1, fmt::format("nlohmann exception {}: {}", e.id, e.what())};
             } catch (std::exception &e) {
-                return model::Err{-1, fmt::format("exception thrown: {}", e.what())};
+                return model::Err{std::nullopt, -1, fmt::format("exception thrown: {}", e.what())};
             } catch (...) {
-                return model::Err{-1, "unknown exception thrown"};
+                return model::Err{std::nullopt, -1, "unknown exception thrown"};
             }
-            return model::Err{0, "no error"};
+            return model::Err{std::nullopt, 0, "no error"};
         }
     }
 
@@ -65,22 +68,21 @@ namespace crypto {
         HTTPClientImpl& operator=(HTTPClientImpl&&) = delete;
 
         private:
-        static Response processResponse(httplib::Result &res, int expectedCode) {
+        template <int I>
+        static Response processResponse(httplib::Result &res, std::array<int, I> expected) {
             if (!res) {
                 auto err = res.error();
                 std::stringstream ss;
                 ss << err;
 
-                model::Err ret;
-                ret.code = -1;
-                ret.msg = ss.str();
-                return ret;
+                return model::Err {std::nullopt, -1, ss.str()};
             }
 
-            if (res->status != expectedCode) {
+            if (std::none_of(expected.begin(), expected.end(), [x = res->status](auto y) { return x == y; })) {
                 model::Err ret;
                 ret.code = res->status;
                 ret.msg = "server returned non-200 code";
+                ret.body = res->body;
                 return ret;
             }
             
@@ -92,7 +94,7 @@ namespace crypto {
         Response Get(std::string_view request) {
             try {
                 auto res = client.Get(request.data());
-                return processResponse(res, 200);
+                return processResponse<1>(res, {200});
             } catch (...) {
                 return exceptionToErr();
             };
@@ -126,7 +128,7 @@ namespace crypto {
                 nlohmann::json request = a;
                 spdlog::debug("Sending answer: {}", request.dump());
                 auto res = client.Post(path.c_str(), request.dump(), "application/json");
-                auto processed = processResponse(res, 202);
+                auto processed = processResponse<3>(res, {200, 202, 400});
             
                 model::SendAnswerResponse resp;
                 std::visit(overload{
@@ -140,7 +142,8 @@ namespace crypto {
 
     };
 
-    HTTPClient::HTTPClient(std::string_view url, std::string_view token): pImpl(std::make_unique<HTTPClientImpl>(url, token)) {
+    HTTPClient::HTTPClient(std::string_view url, std::string_view token):
+        pImpl(std::make_unique<HTTPClientImpl>(url, token)) {
     }
 
     HTTPClient::~HTTPClient() = default;
@@ -152,7 +155,7 @@ namespace crypto {
         std::optional<model::UserInfo> res = std::nullopt;
         std::visit(overload{
             [](const model::Err& err) {
-                spdlog::critical("Can`t register: ", err);
+                spdlog::critical("Can`t register: {}", err);
             },
             [&res](const model::UserInfo& info) {res = info;} }, resp);
         return res;
@@ -165,7 +168,7 @@ namespace crypto {
         std::optional<model::Task> res = std::nullopt;
         std::visit(overload{
             [](const model::Err& err) {
-                spdlog::critical("Can`t get task: code ({}), msg: {}", err.code, err.msg);
+                spdlog::critical("Can`t get task: {}", err);
             },
             [&res](const model::Task& info) {res = info;} }, resp);
         return res;
@@ -178,7 +181,7 @@ namespace crypto {
         std::optional<model::AnswerStatus> res = std::nullopt;
         std::visit(overload{
             [](const model::Err& err) {
-                spdlog::critical("Can`t send answer: code ({}), msg: {}", err.code, err.msg);
+                spdlog::critical("Can`t send answer: {}", err);
             },
             [&res](const model::AnswerStatus& info) {res = info;} }, resp);
         return res;

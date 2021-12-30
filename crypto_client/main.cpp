@@ -11,7 +11,7 @@
 int main(int argc, char *argv[]) {
     using namespace crypto;
 
-    std::string token = "9cae7663b25e9f91e989cb250a9174a3998e2bffd76d23df";
+    std::string token;
     std::string url = "test-server1.tonguys.com";
     std::string logLevel = "debug";
     std::string factor = "1";
