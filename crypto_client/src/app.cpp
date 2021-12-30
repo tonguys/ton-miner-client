@@ -39,45 +39,30 @@ int run(const model::Config &cfg) {
     spdlog::debug("Creating exec with path {}", cfg.miner.string());
     Executor exec(cfg);
     
-    int execCrashesCount = 0;
-    bool shouldRequestNewTask = true;
     std::optional<crypto::model::Task> task;
-
     while (true) {
-        if (shouldRequestNewTask) {
-            spdlog::debug("Request new task");
-            task = client->GetTask();
-            if (!task) {
-                spdlog::critical("Can`t get new task from server, inspect logs for details");
-                return 1;
-            }
+        spdlog::debug("Request new task");
+        task = client->GetTask();
+        if (!task) {
+            spdlog::critical("Can`t get new task from server, inspect logs for details");
+            return 1;
         }
-        shouldRequestNewTask = true;
 
         spdlog::debug("Execing miner with task: {}", task.value());
         auto res = exec.Exec(task.value());
         std::optional<model::Answer> answer = std::nullopt;
         std::visit(overload{
-            [&execCrashesCount](exec_res::Timeout){ 
+            [](exec_res::Timeout){ 
                 spdlog::info("Miner timeout");
-                execCrashesCount = 0;
             },
-            [&execCrashesCount, &shouldRequestNewTask](const exec_res::Crash &c){
+            [](const exec_res::Crash &c){
                 spdlog::error("Miner crashed: {}", exec_res::Dump(c));
-                execCrashesCount++;
-                shouldRequestNewTask = false; 
             },
-            [&answer, &execCrashesCount](exec_res::Ok res){
+            [&answer](exec_res::Ok res){
                 spdlog::info("Answer found");
                 answer = res.answer;
-                execCrashesCount = 0;
             }
         }, res);
-
-        if (execCrashesCount > 5) {
-            spdlog::critical("Exec crashed much times, exiting...");
-            return 1;
-        }
 
         if (answer) {
             spdlog::debug("Sending answer");

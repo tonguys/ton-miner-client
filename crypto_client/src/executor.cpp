@@ -4,6 +4,7 @@
 #include "openssl/bio.h"
 #include "models.hpp"
 
+#include <chrono>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -13,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <thread>
 
 #include "boost/process.hpp"
 #include "boost/process/detail/child_decl.hpp"
