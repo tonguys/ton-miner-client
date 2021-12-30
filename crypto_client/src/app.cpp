@@ -26,9 +26,7 @@ template<class... Ts> overload(Ts...) -> overload<Ts...>;
 int run(const model::Config &cfg) {
     spdlog::set_level(cfg.logLevel);
 
-    spdlog::info("Starting with {}", Dump(cfg));
-
-    std::cout << cfg << std::endl;
+    spdlog::info("Starting with {}", cfg);
 
     std::unique_ptr<Client> client = std::make_unique<mock::MockClient>(cfg.url, cfg.token);
 
@@ -38,11 +36,8 @@ int run(const model::Config &cfg) {
         return 1;
     }
 
-    // TODO: fill path
-    auto currentDirectory = std::filesystem::current_path();
-    auto minerPath = currentDirectory / "pow-miner-cuda";
-    spdlog::debug("Creating exec with path {}", minerPath.string());
-    Executor exec(minerPath);
+    spdlog::debug("Creating exec with path {}", cfg.miner.string());
+    Executor exec(cfg);
     
     int execCrashesCount = 0;
     bool shouldRequestNewTask = true;
@@ -59,7 +54,7 @@ int run(const model::Config &cfg) {
         }
         shouldRequestNewTask = true;
 
-        spdlog::debug("Execing miner with task: {}", model::Dump(task.value()));
+        spdlog::debug("Execing miner with task: {}", task.value());
         auto res = exec.Exec(task.value());
         std::optional<model::Answer> answer = std::nullopt;
         std::visit(overload{
@@ -68,7 +63,7 @@ int run(const model::Config &cfg) {
                 execCrashesCount = 0;
             },
             [&execCrashesCount, &shouldRequestNewTask](const exec_res::Crash &c){
-                spdlog::warn("Miner crashed: {}", Dump(c));
+                spdlog::error("Miner crashed: {}", exec_res::Dump(c));
                 execCrashesCount++;
                 shouldRequestNewTask = false; 
             },

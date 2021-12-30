@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -14,6 +15,7 @@
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 #include "fmt/format.h"
+#include "fmt/ostream.h"
 
 #ifndef MODELS_HPP
 #define MODELS_HPP
@@ -94,10 +96,15 @@ struct Config {
     std::string token;
     std::string url;
     spdlog::level::level_enum logLevel;
+    std::filesystem::path miner;
+    std::string boostFactor;
+
+    // NOTE: DONT FORGET TO INCRIMENT IN CASE OF ADDING OPTIONS
+    static constexpr int numberOfField = 5;
 
     template <class ...Args>
     explicit constexpr Config(Args ...args) {
-        static_assert(sizeof...(args) == 3, "Not correct number of arguments in Config");
+        static_assert(sizeof...(args) == numberOfField, "Not correct number of arguments in Config");
         (args.Set(*this), ...);
     }
 };
@@ -169,9 +176,42 @@ class LogLevelOption {
     }
 };
 
+class MinerPathOption {
+    std::filesystem::path miner;
+
+    public:
+    void Set(Config &cfg) {
+        cfg.miner = std::move(miner);
+    }
+
+    MinerPathOption& operator=(std::filesystem::path path) {
+        miner = std::move(path);
+        return *this;
+    }
+    MinerPathOption& operator=(std::string_view path) {
+        return *this = std::filesystem::path(path);
+    }
+};
+
+class BoostFactorOption {
+    std::string data;
+
+    public:
+    void Set(Config &cfg) {
+        cfg.boostFactor = std::move(data);
+    }
+
+    BoostFactorOption& operator=(std::string factor) {
+        data = std::move(factor);
+        return *this;
+    }
+};
+
 inline TokenOption Token;
 inline UrlOption Url;
 inline LogLevelOption LogLevel;
+inline MinerPathOption MinerPath;
+inline BoostFactorOption BoostFactor;
 
 
 std::string Dump(const Err&);

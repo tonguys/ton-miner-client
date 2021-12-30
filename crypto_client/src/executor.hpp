@@ -37,22 +37,22 @@ inline std::string Dump(const Crash &crash) {
 }
 
 inline std::string Dump(const Ok &ok) {
-    return fmt::format("Ok{{answer:{}}}", Dump(ok.answer));
+    return fmt::format("Ok{{answer:{}}}", ok.answer);
 }
 
 }
 
 class Executor {
     private:
-    std::filesystem::path path;
+    const std::string factor;
+    const std::filesystem::path path;
     std::filesystem::path result_path;
     inline static const char* const resName = "mined.boc";
 
     public:
-    explicit Executor(std::filesystem::path _path): path(std::move(_path)) {
+    explicit Executor(const model::Config &cfg): factor(cfg.boostFactor), path(cfg.miner) {
         result_path = path.parent_path() / resName;
     };
-    explicit Executor(std::string_view _path): Executor(std::filesystem::path(_path)) {};
 
     ~Executor() = default;
 
@@ -63,7 +63,7 @@ class Executor {
     Executor& operator=(Executor&&) = delete;
 
     private:
-    static std::string taskToArgs(const model::Task &t);
+    std::string taskToArgs(const model::Task &t);
     bool AnswerExists();
     std::vector<model::Answer::Byte> GetAnswer();
     exec_res::ExecRes ExecImpl(const model::Task &task);

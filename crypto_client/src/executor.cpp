@@ -31,9 +31,10 @@ std::string Executor::taskToArgs(const model::Task &t) {
     // TODO: conigurable -g option
     const long long iterations = 100000000000;
     return fmt::format(
-        "-g 0 -e {} {} {} {} {} {} {}",
+        "-g 0 -F {} -e {} {} {} {} {} {} {}",
+        factor,
         t.expires.GetUnix(),
-        t.giver_address,
+        t.pool_address,
         t.seed,
         t.complexity,
         iterations,
@@ -82,7 +83,7 @@ exec_res::ExecRes Executor::ExecImpl(const model::Task &task) {
     model::Answer answer;
     answer.giver_address = task.giver_address;
     answer.boc = GetAnswer();
-    spdlog::debug(model::Dump(answer));
+    spdlog::debug(answer);
     return exec_res::Ok{answer};
 }
 

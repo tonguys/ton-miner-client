@@ -32,8 +32,10 @@ namespace crypto {
                 }
             } catch (std::exception &e) {
                 return model::Err{-1, fmt::format("exception thrown: {}", e.what())};
+            } catch (...) {
+                return model::Err{-1, "unknown exception thrown"};
             }
-            return model::Err{-1, "unknown exception thrown"};
+            return model::Err{0, "no error"};
         }
     }
 
@@ -144,18 +146,20 @@ namespace crypto {
     HTTPClient::~HTTPClient() = default;
 
     std::optional<model::UserInfo> HTTPClient::doRegister() {
+        spdlog::debug("Registering");
         auto resp = pImpl->Register();
     
         std::optional<model::UserInfo> res = std::nullopt;
         std::visit(overload{
             [](const model::Err& err) {
-                spdlog::critical("Can`t register: code ({}), msg: {}", err.code, err.msg);
+                spdlog::critical("Can`t register: ", err);
             },
             [&res](const model::UserInfo& info) {res = info;} }, resp);
         return res;
     }
 
     std::optional<model::Task> HTTPClient::doGetTask() {
+        spdlog::debug("Getting task");
         auto resp = pImpl->GetTask();
 
         std::optional<model::Task> res = std::nullopt;
@@ -168,6 +172,7 @@ namespace crypto {
     }
 
     std::optional<model::AnswerStatus> HTTPClient::doSendAnswer(const model::Answer &answer) {
+        spdlog::debug("Sending answer: {}", answer);
         auto resp = pImpl->SendAnswer(answer);
 
         std::optional<model::AnswerStatus> res = std::nullopt;

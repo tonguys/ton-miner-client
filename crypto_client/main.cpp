@@ -1,6 +1,7 @@
 #include "fmt/core.h"
 #include "lyra/arg.hpp"
 #include "lyra/help.hpp"
+#include "lyra/opt.hpp"
 #include "models.hpp"
 #include "app.hpp"
 
@@ -13,7 +14,12 @@ int main(int argc, char *argv[]) {
     std::string token = "9cae7663b25e9f91e989cb250a9174a3998e2bffd76d23df";
     std::string url = "test-server1.tonguys.com";
     std::string logLevel = "debug";
+    std::string factor = "1";
     bool showHelp = false;
+
+    auto currentDirectory = std::filesystem::current_path();
+    auto miner = currentDirectory / "pow-miner-cuda";
+
     auto cli
         = lyra::help(showHelp)
         | lyra::opt(token, "token")
@@ -27,8 +33,13 @@ int main(int argc, char *argv[]) {
             ("Log level").optional().choices(
                 "debug",
                 "info",
-                "err",
-                "critical");
+                "err")
+        | lyra::opt(miner, "miner")
+            ["-m"]["--miner"]
+            ("Path to ton miner").optional()
+        | lyra::opt(factor, "factor")
+            ["-F"]["--boost-factor"]
+            ("Boost factor").optional();
         
     auto result = cli.parse({argc, argv});
     if ( !result ) { 
@@ -42,8 +53,10 @@ int main(int argc, char *argv[]) {
         return 0;
     }
     
-    crypto::run(crypto::model::Config(
+    return crypto::run(crypto::model::Config(
         model::Token = token,
         model::Url = url,
-        model::LogLevel = logLevel));
+        model::LogLevel = logLevel,
+        model::MinerPath = miner,
+        model::BoostFactor = factor));
 }
