@@ -32,7 +32,7 @@ namespace bp = boost::process;
 std::string Executor::taskToArgs(const model::Task &t) {
   // TODO: conigurable -g option
   const long long iterations = 100000000000;
-  return fmt::format("-g 0 -F {} -e {} {} {} {} {} {} {}", factor,
+  return fmt::format(" -vv -g 0 -F {} -e {} {} {} {} {} {} {}", factor,
                      t.expires.GetUnix(), t.pool_address, t.seed, t.complexity,
                      iterations, t.giver_address, resName);
 }

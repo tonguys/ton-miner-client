@@ -13,7 +13,6 @@
 #include "fmt/format.h"
 #include "fmt/ostream.h"
 #include "nlohmann/json.hpp"
-#include "nlohmann/json_fwd.hpp"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 

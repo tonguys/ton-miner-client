@@ -19,19 +19,20 @@ int main(int argc, char *argv[]) {
   auto currentDirectory = std::filesystem::current_path();
   auto miner = currentDirectory / "pow-miner-cuda";
 
-  auto cli =
-      lyra::help(showHelp) |
-      lyra::opt(token, "token")["-t"]["--token"]("Your tg token").required() |
-      lyra::opt(url, "url")["-u"]["--url"](
-          fmt::format("Server url (default to {})", url))
-          .optional() |
-      lyra::opt(logLevel, "logLevel")["-l"]["--level"]("Log level")
-          .optional()
-          .choices("debug", "info", "err") |
-      lyra::opt(miner, "miner")["-m"]["--miner"]("Path to ton miner")
-          .optional() |
-      lyra::opt(factor, "factor")["-F"]["--boost-factor"]("Boost factor")
-          .optional();
+  auto cli = lyra::help(showHelp) |
+             lyra::opt(token, "token")["-t"]["--token"](
+                 "Your token, get it using bot @pooltonbot")
+                 .required() |
+             lyra::opt(url, "url")["-u"]["--url"](
+                 fmt::format("Server url (default to {})", url))
+                 .optional() |
+             lyra::opt(logLevel, "logLevel")["-l"]["--level"]("Log level")
+                 .optional()
+                 .choices("debug", "info", "err") |
+             lyra::opt(miner, "miner")["-m"]["--miner"]("Path to ton miner")
+                 .optional() |
+             lyra::opt(factor, "factor")["-F"]["--boost-factor"]("Boost factor")
+                 .optional();
 
   auto result = cli.parse({argc, argv});
   if (!result) {
