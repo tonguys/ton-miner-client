@@ -25,7 +25,7 @@ namespace crypto::model {
 
 struct Err {
   // we will not map server error responses into any type,
-  // couze we only need to log it, json string we do the trick
+  // couze we only need to log it, json string will do the trick
   std::optional<std::string> body;
   int code;
   std::string msg;
@@ -90,15 +90,32 @@ struct Answer {
   std::string giver_address;
 };
 
+struct MinerTask : Task {
+  long long iterations;
+  int gpu;
+
+  MinerTask &operator=(const Task &task) {
+    Task::operator=(task);
+    return *this;
+  }
+
+  MinerTask(long long _iterations, const Task &task, int _gpu)
+      : iterations(_iterations), gpu(_gpu) {
+    *this = task;
+  }
+};
+
 struct Config {
   std::string token;
   std::string url;
   spdlog::level::level_enum logLevel;
   std::filesystem::path miner;
-  std::string boostFactor;
+  long boostFactor;
+  long long iterations;
+  int gpu;
 
   // NOTE: DONT FORGET TO INCRIMENT IN CASE OF ADDING OPTIONS
-  static constexpr int numberOfField = 5;
+  static constexpr int numberOfField = 7;
 
   template <class... Args> explicit constexpr Config(Args... args) {
     static_assert(sizeof...(args) == numberOfField,
@@ -186,13 +203,37 @@ public:
 };
 
 class BoostFactorOption {
-  std::string data;
+  long data;
 
 public:
-  void Set(Config &cfg) { cfg.boostFactor = std::move(data); }
+  void Set(Config &cfg) { cfg.boostFactor = data; }
 
-  BoostFactorOption &operator=(std::string factor) {
-    data = std::move(factor);
+  BoostFactorOption &operator=(long factor) {
+    data = factor;
+    return *this;
+  }
+};
+
+class IterationsOption {
+  long long data;
+
+public:
+  void Set(Config &cfg) { cfg.iterations = data; }
+
+  IterationsOption &operator=(long long iterations) {
+    data = iterations;
+    return *this;
+  }
+};
+
+class GPUOptions {
+  int data;
+
+public:
+  void Set(Config &cfg) { cfg.gpu = data; }
+
+  GPUOptions &operator=(int gpu) {
+    data = gpu;
     return *this;
   }
 };
@@ -202,11 +243,14 @@ inline UrlOption Url;
 inline LogLevelOption LogLevel;
 inline MinerPathOption MinerPath;
 inline BoostFactorOption BoostFactor;
+inline IterationsOption Iterations;
+inline GPUOptions GPU;
 
 std::string Dump(const Err &);
 std::string Dump(const Ok &);
 std::string Dump(const UserInfo &);
 std::string Dump(const Task &);
+std::string Dump(const MinerTask &);
 std::string Dump(const AnswerStatus &);
 std::string Dump(const Answer &);
 std::string Dump(const Config &);

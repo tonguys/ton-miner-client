@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   std::string token;
   std::string url = "test-server1.tonguys.com";
   std::string logLevel = "debug";
-  std::string factor = "1";
+  long factor = 1;
   bool showHelp = false;
 
   auto currentDirectory = std::filesystem::current_path();
@@ -46,7 +46,9 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  const long long iterations = 100000000000;
   return crypto::run(crypto::model::Config(
       model::Token = token, model::Url = url, model::LogLevel = logLevel,
-      model::MinerPath = miner, model::BoostFactor = factor));
+      model::MinerPath = miner, model::BoostFactor = factor, model::GPU = 0,
+      model::Iterations = iterations));
 }

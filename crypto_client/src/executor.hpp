@@ -44,7 +44,7 @@ inline std::string Dump(const Ok &ok) {
 
 class Executor {
 private:
-  const std::string factor;
+  const long factor;
   const std::filesystem::path path;
   std::filesystem::path result_path;
   inline static const char *const resName = "mined.boc";
@@ -64,13 +64,13 @@ public:
   Executor &operator=(Executor &&) = delete;
 
 private:
-  std::string taskToArgs(const model::Task &t);
+  std::string taskToArgs(const model::MinerTask &t);
   bool AnswerExists();
   std::vector<model::Answer::Byte> GetAnswer();
-  exec_res::ExecRes ExecImpl(const model::Task &task);
+  exec_res::ExecRes ExecImpl(const model::MinerTask &task);
 
 public:
-  exec_res::ExecRes Exec(const model::Task &task);
+  exec_res::ExecRes Exec(const model::MinerTask &task);
 };
 
 } // namespace crypto

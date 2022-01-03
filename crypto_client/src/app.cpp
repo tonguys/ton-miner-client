@@ -28,13 +28,14 @@ int run(const model::Config &cfg) {
   spdlog::info("Starting with {}", cfg);
 
   std::unique_ptr<Client> client =
-      std::make_unique<mock::MockClient>(cfg.url, cfg.token);
+      std::make_unique<HTTPClient>(cfg.url, cfg.token);
 
   auto auth = client->Register();
   if (!auth) {
     spdlog::critical("Registration failed, inspect logs for details");
     return 1;
   }
+  spdlog::info("Registered with {}", auth.value());
 
   spdlog::debug("Creating exec with path {}", cfg.miner.string());
   Executor exec(cfg);
@@ -48,9 +49,12 @@ int run(const model::Config &cfg) {
           "Can`t get new task from server, inspect logs for details");
       return 1;
     }
+    spdlog::debug("Got task: {}", task.value());
 
-    spdlog::debug("Execing miner with task: {}", task.value());
-    auto res = exec.Exec(task.value());
+    auto minerTask = model::MinerTask(cfg.iterations, task.value(), cfg.gpu);
+    spdlog::debug("Starting miner with task: {}", Dump(minerTask));
+
+    auto res = exec.Exec(minerTask);
     std::optional<model::Answer> answer = std::nullopt;
     std::visit(
         overload{[](exec_res::Timeout) { spdlog::info("Miner timeout"); },

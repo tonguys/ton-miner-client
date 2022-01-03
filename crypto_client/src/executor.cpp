@@ -1,8 +1,8 @@
 #include "executor.hpp"
-#include "boost/exception/exception.hpp"
-#include "boost/process/exception.hpp"
+
+#include "boost/range/adaptor/tokenized.hpp"
+#include "boost/regex/v5/match_flags.hpp"
 #include "models.hpp"
-#include "openssl/bio.h"
 
 #include <chrono>
 #include <exception>
@@ -15,13 +15,20 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <vector>
 
 #include "boost/asio.hpp"
 #include "boost/asio/streambuf.hpp"
+#include "boost/exception/exception.hpp"
 #include "boost/process.hpp"
+#include "boost/process/args.hpp"
 #include "boost/process/detail/child_decl.hpp"
+#include "boost/process/exception.hpp"
 #include "boost/process/io.hpp"
 #include "boost/process/pipe.hpp"
+#include "boost/range/adaptors.hpp"
+#include "boost/range/algorithm_ext/push_back.hpp"
+#include "boost/regex.hpp"
 #include "fmt/format.h"
 #include "spdlog/spdlog.h"
 
@@ -29,23 +36,30 @@ namespace crypto {
 
 namespace bp = boost::process;
 
-std::string Executor::taskToArgs(const model::Task &t) {
-  // TODO: conigurable -g option
-  const long long iterations = 100000000000;
-  return fmt::format(" -vv -g 0 -F {} -e {} {} {} {} {} {} {}", factor,
+std::string Executor::taskToArgs(const model::MinerTask &t) {
+  return fmt::format("-vv -g {} -F {} -e {} {} {} {} {} {} {}", t.gpu, factor,
                      t.expires.GetUnix(), t.pool_address, t.seed, t.complexity,
-                     iterations, t.giver_address, resName);
+                     t.iterations, t.giver_address, resName);
 }
 
-exec_res::ExecRes Executor::ExecImpl(const model::Task &task) {
+std::vector<std::string> parsed(std::string args) {
+  // TODO: regex is a shit, think about better solution
+  std::vector<std::string> res;
+  auto from = boost::adaptors::tokenize(args, boost::regex("\\s+"), -1,
+                                        boost::regex_constants::match_default);
+  boost::push_back(res, from);
+  return res;
+}
+
+exec_res::ExecRes Executor::ExecImpl(const model::MinerTask &task) {
   boost::asio::io_service ios;
   std::future<std::string> outData;
   boost::asio::streambuf errData;
 
   auto args = taskToArgs(task);
   spdlog::info("Miner args: {}", args);
-  bp::child ch(path.string(), args, bp::std_in.close(), bp::std_err > errData,
-               bp::std_out > outData, ios);
+  bp::child ch(path.string(), bp::args(parsed(args)), bp::std_in.close(),
+               bp::std_err > errData, bp::std_out > outData, ios);
 
   ios.run();
   auto status = outData.wait_until(task.expires.GetChrono());
@@ -78,7 +92,7 @@ exec_res::ExecRes Executor::ExecImpl(const model::Task &task) {
   return exec_res::Ok{answer};
 }
 
-exec_res::ExecRes Executor::Exec(const model::Task &task) {
+exec_res::ExecRes Executor::Exec(const model::MinerTask &task) {
   try {
     spdlog::info("Exec miner");
     return ExecImpl(task);

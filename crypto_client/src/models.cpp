@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "cppcodec/base64_rfc4648.hpp"
+#include "fmt/core.h"
 #include "fmt/format.h"
 #include "spdlog/spdlog.h"
 
@@ -38,6 +39,11 @@ std::string Dump(const Task &task) {
       "Task{{complexity: {}, expires: {}, giver: {}, pool: {}, seed: {}}}",
       task.complexity, task.expires.GetUnix(), task.giver_address,
       task.pool_address, task.seed);
+}
+
+std::string Dump(const MinerTask &task) {
+  return fmt::format("MinerTask{{gpu: {}, iterations: {}, task: {}}}", task.gpu,
+                     task.iterations, Dump(static_cast<const Task &>(task)));
 }
 
 std::string Dump(const AnswerStatus &status) {
