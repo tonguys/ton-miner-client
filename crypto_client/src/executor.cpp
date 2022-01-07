@@ -107,7 +107,10 @@ exec_res::ExecRes Executor::Exec(const model::MinerTask &task) {
   return exec_res::Crash{};
 }
 
-bool Executor::AnswerExists() { return std::filesystem::exists(result_path); }
+bool Executor::AnswerExists() {
+  spdlog::trace("Checking {} path answer", result_path.string());
+  return std::filesystem::exists(result_path);
+}
 
 std::vector<model::Answer::Byte> Executor::GetAnswer() {
   std::ifstream file(result_path, std::ios::binary | std::ios::in);

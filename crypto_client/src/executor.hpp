@@ -52,7 +52,7 @@ private:
 public:
   explicit Executor(const model::Config &cfg)
       : factor(cfg.boostFactor), path(cfg.miner) {
-    result_path = path.parent_path() / resName;
+    result_path = std::filesystem::current_path() / resName;
   };
 
   ~Executor() = default;
