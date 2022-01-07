@@ -35,3 +35,4 @@ CMakeSettings.json
 # build artifacts
 build
 .cache
+cmake-build-*
