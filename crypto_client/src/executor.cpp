@@ -20,6 +20,7 @@
 #include "boost/asio.hpp"
 #include "boost/asio/streambuf.hpp"
 #include "boost/exception/exception.hpp"
+#include "boost/multiprecision/cpp_int.hpp"
 #include "boost/process.hpp"
 #include "boost/process/args.hpp"
 #include "boost/process/detail/child_decl.hpp"
@@ -37,8 +38,22 @@ namespace crypto {
 namespace bp = boost::process;
 
 std::string Executor::taskToArgs(const model::MinerTask &t) {
+  namespace bm = boost::multiprecision;
+
+  bm::cpp_int complexityBigInt;
+  bm::cpp_int seedBigInt;
+
+  std::stringstream hexFormatSS;
+  hexFormatSS << std::hex << t.complexity;
+  hexFormatSS >> complexityBigInt;
+  hexFormatSS.clear();
+
+  hexFormatSS << std::hex << t.seed;
+  hexFormatSS >> seedBigInt;
+
   return fmt::format("-vv -g {} -F {} -e {} {} {} {} {} {} {}", t.gpu, factor,
-                     t.expires.GetUnix(), t.pool_address, t.seed, t.complexity,
+                     t.expires.GetUnix(), t.pool_address,
+                     bm::to_string(seedBigInt), bm::to_string(complexityBigInt),
                      t.iterations, t.giver_address, resName);
 }
 
