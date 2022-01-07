@@ -56,8 +56,13 @@ std::string Dump(const Answer &answer) {
 }
 
 std::string Dump(const Config &cfg) {
-  return fmt::format("Config{{url:{}, logLevel:{}, token:NOT_PRINTED}}",
-                     cfg.url, cfg.logLevel);
+  // NOTE: INCREMENT AFTER UPDATING CONFIG
+  constexpr int expected = 7;
+  static_assert(Config::numberOfField == expected, "Printer not updated");
+  return fmt::format("Config{{url:{}, logLevel:{}, token:NOT_PRINTED, miner: "
+                     "{}, boostFactor: {}, iterations: {}, gpu: [{}]}}",
+                     cfg.url, cfg.logLevel, cfg.miner, cfg.boostFactor,
+                     cfg.iterations, fmt::join(cfg.gpu, ", "));
 }
 
 void to_json(json &j, const UserInfo &info) {

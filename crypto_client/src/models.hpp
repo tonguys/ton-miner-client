@@ -112,7 +112,7 @@ struct Config {
   std::filesystem::path miner;
   long boostFactor;
   long long iterations;
-  int gpu;
+  std::vector<int> gpu;
 
   // NOTE: DONT FORGET TO INCRIMENT IN CASE OF ADDING OPTIONS
   static constexpr int numberOfField = 7;
@@ -227,13 +227,13 @@ public:
 };
 
 class GPUOptions {
-  int data;
+  std::vector<int> data;
 
 public:
   void Set(Config &cfg) { cfg.gpu = data; }
 
-  GPUOptions &operator=(int gpu) {
-    data = gpu;
+  GPUOptions &operator=(std::vector<int> gpu) {
+    data = std::move(gpu);
     return *this;
   }
 };

@@ -28,7 +28,7 @@ int run(const model::Config &cfg) {
   spdlog::info("Starting with {}", cfg);
 
   std::unique_ptr<Client> client =
-      std::make_unique<HTTPClient>(cfg.url, cfg.token);
+      std::make_unique<mock::MockClient>(cfg.url, cfg.token);
 
   auto auth = client->Register();
   if (!auth) {
@@ -51,7 +51,7 @@ int run(const model::Config &cfg) {
     }
     spdlog::debug("Got task: {}", task.value());
 
-    auto minerTask = model::MinerTask(cfg.iterations, task.value(), cfg.gpu);
+    auto minerTask = model::MinerTask(cfg.iterations, task.value(), cfg.gpu[0]);
     spdlog::debug("Starting miner with task: {}", Dump(minerTask));
 
     auto res = exec.Exec(minerTask);
