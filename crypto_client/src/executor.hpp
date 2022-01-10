@@ -6,6 +6,8 @@
 #include <variant>
 #include <vector>
 
+#include "boost/fiber/condition_variable.hpp"
+#include "boost/fiber/mutex.hpp"
 #include "boost/process/group.hpp"
 #include "fmt/core.h"
 #include "models.hpp"
@@ -16,6 +18,54 @@
 #define EXECUTOR_HPP
 
 namespace crypto {
+
+class Waiter {
+private:
+  boost::fibers::condition_variable cond;
+  boost::fibers::mutex mutex;
+  bool ready = false;
+  long n = 0;
+
+public:
+  typedef std::shared_ptr<Waiter> Ptr;
+
+  void Add() {
+    std::unique_lock<boost::fibers::mutex> lock(mutex);
+    n += 1;
+  }
+
+  void Done() {
+    bool allDone = false;
+    {
+      std::unique_lock<boost::fibers::mutex> lock(mutex);
+      n -= 1;
+      if (n <= 0 && !ready) {
+        ready = true;
+        allDone = true;
+      }
+    }
+    if (allDone) {
+      cond.notify_one();
+    }
+  }
+
+  void Wait() {
+    std::unique_lock<boost::fibers::mutex> lock(mutex);
+    ready = false;
+    cond.wait(lock, [this]() { return ready; });
+  }
+
+  void Notify() {
+    {
+      std::unique_lock<boost::fibers::mutex> lock(mutex);
+      if (ready) {
+        return;
+      }
+      ready = true;
+    }
+    cond.notify_one();
+  }
+};
 
 namespace exec_res {
 struct Timeout {};
@@ -56,6 +106,8 @@ private:
   std::filesystem::path result_path;
   inline static const char *const resName = "mined.boc";
 
+  std::shared_ptr<boost::process::group> pg;
+  std::shared_ptr<Waiter> waiter;
   bool running = false;
 
 public:
@@ -77,13 +129,11 @@ private:
   bool answerExists();
   std::vector<model::Answer::Byte> getAnswer();
   // TODO: Hide boost::process from user
-  exec_res::ExecRes exec(const model::MinerTask &task, int gpu,
-                         boost::process::group &g);
-  exec_res::ExecRes execSafe(const model::MinerTask &task, int gpu,
-                             boost::process::group &g);
+  exec_res::ExecRes exec(const model::MinerTask &task, int gpu);
+  exec_res::ExecRes execSafe(const model::MinerTask &task, int gpu);
 
 public:
-  exec_res::ExecRes Run(const model::MinerTask &task);
+  std::optional<exec_res::Ok> Run(const model::MinerTask &task);
   void Stop();
 };
 

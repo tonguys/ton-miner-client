@@ -71,8 +71,8 @@ std::string parseGPU(std::vector<int> &gpu, const int gpuSingle,
       return fmt::format("can`t parse numbers: {} and {}", ls, rs);
     }
 
-    if (r <= l) {
-      return "right <= left number";
+    if (r < l) {
+      return "right < left number";
     }
 
     gpu.resize(r - l + 1);
@@ -115,11 +115,8 @@ int main(int argc, char *argv[]) {
                  .optional() |
              lyra::opt(factor, "factor")["-F"]["--boost-factor"]("Boost factor")
                  .optional() |
-             lyra::opt(gpuSingle,
-                       "gpu")["-g"]["--gpu"]("Device numbre (defaults to #0)")
-                 .optional() |
              lyra::opt(gpuRange, "gpuRange")["-G"]["--gpu-range"](
-                 "Devices range: [0-2] will use #0,#1,#2")
+                 "Devices range: [0-2] will use #0,#1,#2; [0-0] is #0")
                  .optional();
 
   auto result = cli.parse({argc, argv});
@@ -142,7 +139,8 @@ int main(int argc, char *argv[]) {
   }
 
   const long long iterations = 100000000000;
-  return crypto::run(crypto::model::Config(
+  crypto::App app;
+  return app.Run(crypto::model::Config(
       model::Token = std::move(token), model::Url = std::move(url),
       model::LogLevel = logLevel, model::MinerPath = std::move(miner),
       model::BoostFactor = factor, model::GPU = std::move(gpu),
