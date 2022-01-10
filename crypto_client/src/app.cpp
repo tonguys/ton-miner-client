@@ -17,11 +17,6 @@
 
 namespace crypto {
 
-namespace {
-template <class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template <class... Ts> overload(Ts...) -> overload<Ts...>;
-} // namespace
-
 int run(const model::Config &cfg) {
   spdlog::set_level(cfg.logLevel);
 
@@ -51,21 +46,21 @@ int run(const model::Config &cfg) {
     }
     spdlog::debug("Got task: {}", task.value());
 
-    auto minerTask = model::MinerTask(cfg.iterations, task.value(), cfg.gpu[0]);
+    auto minerTask = model::MinerTask(cfg.iterations, task.value(), cfg.gpu);
     spdlog::debug("Starting miner with task: {}", Dump(minerTask));
 
-    auto res = exec.Exec(minerTask);
+    auto res = exec.Run(minerTask);
     std::optional<model::Answer> answer = std::nullopt;
-    std::visit(
-        overload{[](exec_res::Timeout) { spdlog::info("Miner timeout"); },
-                 [](const exec_res::Crash &c) {
-                   spdlog::error("Miner crashed: {}", exec_res::Dump(c));
-                 },
-                 [&answer](exec_res::Ok res) {
-                   spdlog::info("Answer found");
-                   answer = res.answer;
-                 }},
-        res);
+    std::visit(model::util::overload{
+                   [](exec_res::Timeout) { spdlog::info("Miner timeout"); },
+                   [](const exec_res::Crash &c) {
+                     spdlog::error("Miner crashed: {}", exec_res::Dump(c));
+                   },
+                   [&answer](exec_res::Ok res) {
+                     spdlog::info("Answer found");
+                     answer = res.answer;
+                   }},
+               res);
 
     if (answer) {
       spdlog::debug("Sending answer");

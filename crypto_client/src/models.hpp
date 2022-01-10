@@ -44,7 +44,13 @@ struct UserInfo {
 using RegisterResponse = std::variant<Err, UserInfo>;
 
 namespace util {
-using namespace std::chrono;
+
+// overload pattern:
+// https://www.cppstories.com/2019/02/2lines3featuresoverload.html/
+template <class... Ts> struct overload : Ts... { using Ts::operator()...; };
+template <class... Ts> overload(Ts...) -> overload<Ts...>;
+
+namespace time = std::chrono;
 
 class Timestamp {
 private:
@@ -53,8 +59,8 @@ private:
 public:
   Timestamp() = default;
   explicit Timestamp(long unix_timestamp) : unix(unix_timestamp) {}
-  explicit Timestamp(time_point<steady_clock> tp) {
-    unix = duration_cast<seconds>(tp.time_since_epoch()).count();
+  explicit Timestamp(time::time_point<time::steady_clock> tp) {
+    unix = time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
   }
 
   Timestamp &operator=(const Timestamp &) = default;
@@ -64,7 +70,9 @@ public:
   ~Timestamp() = default;
 
   long GetUnix() const { return unix; }
-  auto GetChrono() const { return time_point<steady_clock>{seconds{unix}}; }
+  auto GetChrono() const {
+    return time::time_point<time::steady_clock>{time::seconds{unix}};
+  }
 };
 
 } // namespace util
@@ -92,15 +100,15 @@ struct Answer {
 
 struct MinerTask : Task {
   long long iterations;
-  int gpu;
+  std::vector<int> gpu;
 
   MinerTask &operator=(const Task &task) {
     Task::operator=(task);
     return *this;
   }
 
-  MinerTask(long long _iterations, const Task &task, int _gpu)
-      : iterations(_iterations), gpu(_gpu) {
+  MinerTask(long long _iterations, const Task &task, std::vector<int> _gpu)
+      : iterations(_iterations), gpu(std::move(_gpu)) {
     *this = task;
   }
 };

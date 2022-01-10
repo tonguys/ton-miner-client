@@ -42,8 +42,9 @@ std::string Dump(const Task &task) {
 }
 
 std::string Dump(const MinerTask &task) {
-  return fmt::format("MinerTask{{gpu: {}, iterations: {}, task: {}}}", task.gpu,
-                     task.iterations, Dump(static_cast<const Task &>(task)));
+  return fmt::format("MinerTask{{gpu: [{}], iterations: {}, task: {}}}",
+                     fmt::join(task.gpu, ", "), task.iterations,
+                     Dump(static_cast<const Task &>(task)));
 }
 
 std::string Dump(const AnswerStatus &status) {

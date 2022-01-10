@@ -19,10 +19,6 @@
 #include "spdlog/spdlog.h"
 
 namespace crypto {
-namespace {
-template <class... Ts> struct overload : Ts... { using Ts::operator()...; };
-template <class... Ts> overload(Ts...) -> overload<Ts...>;
-} // namespace
 
 namespace {
 model::Err exceptionToErr() {
@@ -106,9 +102,10 @@ public:
     auto res = Get(request);
 
     model::RegisterResponse resp;
-    std::visit(overload{[&resp](const model::Err &err) { resp = err; },
-                        [&resp](const model::Ok &ok) { resp = ok.body; }},
-               res);
+    std::visit(
+        model::util::overload{[&resp](const model::Err &err) { resp = err; },
+                              [&resp](const model::Ok &ok) { resp = ok.body; }},
+        res);
     return resp;
   }
 
@@ -117,9 +114,10 @@ public:
     auto res = Get(request);
 
     model::TaskResponse resp;
-    std::visit(overload{[&resp](const model::Err &err) { resp = err; },
-                        [&resp](const model::Ok &ok) { resp = ok.body; }},
-               res);
+    std::visit(
+        model::util::overload{[&resp](const model::Err &err) { resp = err; },
+                              [&resp](const model::Ok &ok) { resp = ok.body; }},
+        res);
     return resp;
   }
 
@@ -133,8 +131,9 @@ public:
       auto processed = processResponse<3>(res, {200, 202, 400});
 
       model::SendAnswerResponse resp;
-      std::visit(overload{[&resp](const model::Err &err) { resp = err; },
-                          [&resp](const model::Ok &ok) { resp = ok.body; }},
+      std::visit(model::util::overload{
+                     [&resp](const model::Err &err) { resp = err; },
+                     [&resp](const model::Ok &ok) { resp = ok.body; }},
                  processed);
       return resp;
       ;
@@ -154,10 +153,11 @@ std::optional<model::UserInfo> HTTPClient::doRegister() {
   auto resp = pImpl->Register();
 
   std::optional<model::UserInfo> res = std::nullopt;
-  std::visit(overload{[](const model::Err &err) {
-                        spdlog::critical("Can`t register: {}", err);
-                      },
-                      [&res](const model::UserInfo &info) { res = info; }},
+  std::visit(model::util::overload{
+                 [](const model::Err &err) {
+                   spdlog::critical("Can`t register: {}", err);
+                 },
+                 [&res](const model::UserInfo &info) { res = info; }},
              resp);
   return res;
 }
@@ -167,11 +167,12 @@ std::optional<model::Task> HTTPClient::doGetTask() {
   auto resp = pImpl->GetTask();
 
   std::optional<model::Task> res = std::nullopt;
-  std::visit(overload{[](const model::Err &err) {
-                        spdlog::critical("Can`t get task: {}", err);
-                      },
-                      [&res](const model::Task &info) { res = info; }},
-             resp);
+  std::visit(
+      model::util::overload{[](const model::Err &err) {
+                              spdlog::critical("Can`t get task: {}", err);
+                            },
+                            [&res](const model::Task &info) { res = info; }},
+      resp);
   return res;
 }
 
@@ -181,10 +182,11 @@ HTTPClient::doSendAnswer(const model::Answer &answer) {
   auto resp = pImpl->SendAnswer(answer);
 
   std::optional<model::AnswerStatus> res = std::nullopt;
-  std::visit(overload{[](const model::Err &err) {
-                        spdlog::critical("Can`t send answer: {}", err);
-                      },
-                      [&res](const model::AnswerStatus &info) { res = info; }},
+  std::visit(model::util::overload{
+                 [](const model::Err &err) {
+                   spdlog::critical("Can`t send answer: {}", err);
+                 },
+                 [&res](const model::AnswerStatus &info) { res = info; }},
              resp);
   return res;
 }

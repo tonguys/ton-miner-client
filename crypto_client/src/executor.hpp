@@ -2,9 +2,12 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
+#include "boost/process/group.hpp"
+#include "fmt/core.h"
 #include "models.hpp"
 
 #include "fmt/format.h"
@@ -18,8 +21,12 @@ namespace exec_res {
 struct Timeout {};
 
 struct Crash {
+  Crash() = default;
+  template <typename... T> explicit Crash(std::string_view msg, T &&...args) {
+    msg = fmt::format(msg, std::forward(args)...);
+  }
   std::string msg;
-  int code;
+  int code = 0;
 };
 
 struct Ok {
@@ -49,6 +56,8 @@ private:
   std::filesystem::path result_path;
   inline static const char *const resName = "mined.boc";
 
+  bool running = false;
+
 public:
   explicit Executor(const model::Config &cfg)
       : factor(cfg.boostFactor), path(cfg.miner) {
@@ -64,13 +73,18 @@ public:
   Executor &operator=(Executor &&) = delete;
 
 private:
-  std::string taskToArgs(const model::MinerTask &t);
-  bool AnswerExists();
-  std::vector<model::Answer::Byte> GetAnswer();
-  exec_res::ExecRes ExecImpl(const model::MinerTask &task);
+  std::string taskToArgs(const model::MinerTask &t, int gpu);
+  bool answerExists();
+  std::vector<model::Answer::Byte> getAnswer();
+  // TODO: Hide boost::process from user
+  exec_res::ExecRes exec(const model::MinerTask &task, int gpu,
+                         boost::process::group &g);
+  exec_res::ExecRes execSafe(const model::MinerTask &task, int gpu,
+                             boost::process::group &g);
 
 public:
-  exec_res::ExecRes Exec(const model::MinerTask &task);
+  exec_res::ExecRes Run(const model::MinerTask &task);
+  void Stop();
 };
 
 } // namespace crypto

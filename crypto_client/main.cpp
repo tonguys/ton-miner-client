@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
                  .optional() |
              lyra::opt(logLevel, "logLevel")["-l"]["--level"]("Log level")
                  .optional()
-                 .choices("debug", "info", "err") |
+                 .choices("trace", "debug", "info", "err") |
              lyra::opt(miner, "miner")["-m"]["--miner"]("Path to ton miner")
                  .optional() |
              lyra::opt(factor, "factor")["-F"]["--boost-factor"]("Boost factor")
