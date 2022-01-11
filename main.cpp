@@ -35,12 +35,14 @@ std::string parseGPU(std::vector<int> &result_gpus, std::string_view gpuRange) {
     return "invalid format: not ] on the last place";
   }
 
-  // Remove brackets, now we are working with range, not gpuRange
+  // Remove brackets, now we are working with range_str, not gpuRange
   auto range_str = gpuRange.substr(1, gpuRange.size() - 2);
 
+  // split ranges by comma
   std::vector<std::string> ranges;
   boost::split(ranges, range_str, boost::is_any_of(","));
 
+  // now we are working on range(it is just one number or range like `1-4`)
   for (const auto &range : ranges) {
     bool is_number = false;
     int gpu_number = -1;
@@ -50,6 +52,7 @@ std::string parseGPU(std::vector<int> &result_gpus, std::string_view gpuRange) {
     } catch (boost::bad_lexical_cast &) {
     }
 
+    // if it is just number then just push to back its value
     if (is_number) {
       gpus.emplace_back(gpu_number);
       continue;
@@ -83,6 +86,7 @@ std::string parseGPU(std::vector<int> &result_gpus, std::string_view gpuRange) {
     std::iota(std::next(gpus.begin(), (long)old_size), gpus.end(), l);
   }
 
+  // make gpus unique
   auto unique_gpus = boost::range::unique(gpus);
 
   boost::range::copy(unique_gpus, std::back_inserter(result_gpus));
