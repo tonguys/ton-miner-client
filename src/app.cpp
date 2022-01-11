@@ -54,8 +54,9 @@ int App::Run(const model::Config &cfg) {
     spdlog::debug("Starting miner with task: {}", Dump(minerTask));
 
     auto res = exec->Run(minerTask);
+    exec->Stop();
     if (res) {
-      spdlog::debug("Found answer: {}", res.value());
+      spdlog::debug("Found answer: {}", Dump(res.value()));
       model::Answer answer = res->answer;
       spdlog::debug("Sending answer");
       auto status = client->SendAnswer(answer);

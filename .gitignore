@@ -36,3 +36,5 @@ CMakeSettings.json
 build
 .cache
 cmake-build-*
+index
+Debug

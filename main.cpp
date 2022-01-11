@@ -15,73 +15,51 @@
 #include <string_view>
 #include <vector>
 
-const int gpuInvalid = -1;
-
-std::string parseGPU(std::vector<int> &gpu, const int gpuSingle,
-                     std::string_view gpuRange) {
-  // TODO: possible to make better?
-  bool single = gpuSingle != gpuInvalid;
-  bool range = !gpuRange.empty();
-
-  if (single && range) {
-    return "you can`t set -g and -G both";
-  }
-
-  if (single) {
-    gpu = std::vector<int>{gpuSingle};
-    return "";
-  }
-
+std::string parseGPU(std::vector<int> &gpu, std::string_view gpuRange) {
   // Yes, this stupid boilerplate code is needed just to parse
   // two numbers and a dash in square brackets (like [1-4]).
   // Yes, it`s dumb, as soon, as we could make one simple regex.
   // But, first of all, regex is always a technical debt, learn to live without
   // them. Secondly, I want to make user friendly cli with user friendly error
   // messages. There are always a donkey: user or developer.
-  if (range) {
-    if (gpuRange.empty()) {
-      return "empty range";
-    }
-    if (gpuRange[0] != '[') {
-      return "invalid format: not [ on first place";
-    }
-    if (gpuRange.back() != ']') {
-      return "invalid format: not ] on the last place";
-    }
-
-    // Remove brackets, now we are working with range, not gpuRange
-    auto range = gpuRange.substr(1, gpuRange.size() - 2);
-
-    const auto dash = range.find('-');
-    if (dash == std::basic_string_view<char>::npos) {
-      return "dash is missed";
-    }
-    if (dash == 0) {
-      return "first number is missed or negative";
-    }
-
-    auto ls = range.substr(0, dash);
-    auto rs = range.substr(dash + 1);
-    int l = 0;
-    int r = 0;
-    try {
-      l = boost::lexical_cast<int>(ls);
-      r = boost::lexical_cast<int>(rs);
-    } catch (...) {
-      return fmt::format("can`t parse numbers: {} and {}", ls, rs);
-    }
-
-    if (r < l) {
-      return "right < left number";
-    }
-
-    gpu.resize(r - l + 1);
-    std::iota(gpu.begin(), gpu.end(), l);
-
-    return "";
+  if (gpuRange.empty()) {
+    return "empty range";
+  }
+  if (gpuRange[0] != '[') {
+    return "invalid format: not [ on first place";
+  }
+  if (gpuRange.back() != ']') {
+    return "invalid format: not ] on the last place";
   }
 
-  gpu = std::vector<int>{0};
+  // Remove brackets, now we are working with range, not gpuRange
+  auto range = gpuRange.substr(1, gpuRange.size() - 2);
+
+  const auto dash = range.find('-');
+  if (dash == std::basic_string_view<char>::npos) {
+    return "dash is missed";
+  }
+  if (dash == 0) {
+    return "first number is missed or negative";
+  }
+
+  auto ls = range.substr(0, dash);
+  auto rs = range.substr(dash + 1);
+  int l = 0;
+  int r = 0;
+  try {
+    l = boost::lexical_cast<int>(ls);
+    r = boost::lexical_cast<int>(rs);
+  } catch (...) {
+    return fmt::format("can`t parse numbers: {} and {}", ls, rs);
+  }
+
+  if (r < l) {
+    return "right < left number";
+  }
+
+  gpu.resize(r - l + 1);
+  std::iota(gpu.begin(), gpu.end(), l);
 
   return "";
 }
@@ -90,16 +68,14 @@ int main(int argc, char *argv[]) {
   using namespace crypto;
 
   std::string token;
-  std::string url = "test-server1.tonguys.com";
+  std::string url = "server.tonguys.com";
   std::string logLevel = "debug";
-  long factor = 1;
+  long factor = 64;
   bool showHelp = false;
 
   auto currentDirectory = std::filesystem::current_path();
   auto miner = currentDirectory / "pow-miner-cuda";
-
-  int gpuSingle = gpuInvalid;
-  std::string gpuRange;
+  std::string gpuRange = "[0-0]";
 
   auto cli = lyra::help(showHelp) |
              lyra::opt(token, "token")["-t"]["--token"](
@@ -132,7 +108,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::vector<int> gpu;
-  std::string report = parseGPU(gpu, gpuSingle, gpuRange);
+  std::string report = parseGPU(gpu, gpuRange);
   if (!report.empty()) {
     std::cerr << "Error: gpu range parsing error: " << report << std::endl;
     return 1;

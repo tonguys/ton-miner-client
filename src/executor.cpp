@@ -1,11 +1,14 @@
 #include "executor.hpp"
 
+#include "boost/fiber/algo/algorithm.hpp"
 #include "boost/fiber/channel_op_status.hpp"
+#include "boost/fiber/operations.hpp"
 #include "boost/process/group.hpp"
 #include "boost/range/adaptor/tokenized.hpp"
 #include "boost/regex/v5/match_flags.hpp"
 #include "models.hpp"
 
+#include <atomic>
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -26,6 +29,7 @@
 #include "boost/asio.hpp"
 #include "boost/asio/streambuf.hpp"
 #include "boost/exception/exception.hpp"
+#include "boost/fiber/algo/shared_work.hpp"
 #include "boost/fiber/buffered_channel.hpp"
 #include "boost/fiber/condition_variable.hpp"
 #include "boost/fiber/fiber.hpp"
@@ -99,8 +103,11 @@ exec_res::ExecRes Executor::exec(const model::MinerTask &task, int gpu) {
 
   auto args = taskToArgs(task, gpu);
   spdlog::info("Miner args: {}", args);
-  bp::child ch(path.string(), pg, bp::args(parsed(args)), bp::std_in.close(),
-               bp::std_err > errData, bp::std_out > outData, ios);
+
+  auto _pgCopy = this->pg;
+  bp::child ch(path.string(), *_pgCopy, bp::args(parsed(args)),
+               bp::std_in.close(), bp::std_err > errData, bp::std_out > outData,
+               ios);
 
   ios.run();
   auto status = outData.wait_until(task.expires.GetChrono());
@@ -134,9 +141,10 @@ exec_res::ExecRes Executor::exec(const model::MinerTask &task, int gpu) {
 }
 
 std::optional<exec_res::Ok> Executor::Run(const model::MinerTask &task) {
-  if (running) {
+  if (running.load()) {
     throw std::runtime_error("method Run called for already running Executor");
   }
+  running.store(true);
 
   // Here we pass Task by ref. We know, that it should work, as we
   // terminate processes before living the scope. But anyway, it may be
@@ -148,11 +156,13 @@ std::optional<exec_res::Ok> Executor::Run(const model::MinerTask &task) {
   this->pg = std::make_shared<boost::process::group>();
 
   using buff_t = boost::fibers::buffered_channel<exec_res::Ok>;
-  std::shared_ptr<buff_t> buff;
+  auto buff = std::make_shared<buff_t>(2);
 
+  std::atomic_bool found = false;
   for (auto gpu : task.gpu) {
     spdlog::info("Starting miner for GPU #{}", gpu);
-    boost::fibers::fiber([buff, task, gpu, this]() {
+    std::thread([&found, buff, task, gpu, this]() {
+      spdlog::debug("Starting task for #{}", gpu);
       waiter->Add();
       auto outcome = execSafe(task, gpu);
       spdlog::debug("Exec #{} done", gpu);
@@ -167,40 +177,64 @@ std::optional<exec_res::Ok> Executor::Run(const model::MinerTask &task) {
                        spdlog::warn("Exec #{} crashed: {}", gpu, Dump(c));
                        waiter->Done();
                      },
-                     [this, buff, gpu](const Ok &ok) {
+                     [&found, this, buff, gpu](const Ok &ok) {
+                       if (found.load()) {
+                         return;
+                       }
+                       found.store(true);
                        spdlog::info("Exec #{} found an answer", gpu);
-                       buff->push(ok);
+                       buff->try_push(ok);
                        waiter->Notify();
                      }},
                  outcome);
     }).detach();
   }
   waiter->Wait();
+  spdlog::debug("All miner tasks complited");
 
-  pg->terminate();
-  // waiting for no more then one second is not a rocket scince trick, but we
-  // realy prefer low possibility of zombie processes to dead locks
-  if (!pg->wait_for(std::chrono::seconds(1))) {
-    spdlog::warn("Not all miners exited");
+  try {
+    if (pg->valid()) {
+      pg->terminate();
+      // waiting for no more then one second is not a rocket scince trick, but
+      // we realy prefer low possibility of zombie processes to dead locks
+      // if (!pg->wait_for(std::chrono::seconds(1))) {
+      //   spdlog::warn("Not all miners exited");
+      // }
+      pg->detach();
+    }
+  } catch (const boost::process::process_error &e) {
+    spdlog::debug("Excteption on miner termination: {}, {}", e.code(),
+                  e.what());
   }
 
   exec_res::Ok res;
   auto status = buff->try_pop(res);
-  buff->close();
   if (status != boost::fibers::channel_op_status::success) {
     spdlog::debug("Buffer status: {}", status);
     return std::nullopt;
   }
+  buff->close();
 
   return res;
 }
 
 void Executor::Stop() {
-  if (!running) {
+  if (!running.load()) {
     return;
   }
+  running.store(false);
+
   spdlog::debug("Stopping exec");
   waiter->Notify();
+  try {
+    if (pg->valid()) {
+      pg->terminate();
+    }
+  } catch (...) {
+  }
+
+  waiter.reset();
+  pg.reset();
 }
 
 bool Executor::answerExists() {

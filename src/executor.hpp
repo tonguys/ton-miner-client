@@ -1,3 +1,4 @@
+#include <atomic>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -28,6 +29,11 @@ private:
 
 public:
   typedef std::shared_ptr<Waiter> Ptr;
+
+  bool Ready() {
+    std::unique_lock<boost::fibers::mutex> lock(mutex);
+    return ready;
+  }
 
   void Add() {
     std::unique_lock<boost::fibers::mutex> lock(mutex);
@@ -72,9 +78,11 @@ struct Timeout {};
 
 struct Crash {
   Crash() = default;
-  template <typename... T> explicit Crash(std::string_view msg, T &&...args) {
-    msg = fmt::format(msg, std::forward(args)...);
-  }
+
+  template <typename... Args>
+  explicit Crash(fmt::format_string<Args...> fmt, Args &&...args)
+      : msg(fmt::format(fmt, std::forward<Args>(args)...)) {}
+
   std::string msg;
   int code = 0;
 };
@@ -108,7 +116,7 @@ private:
 
   std::shared_ptr<boost::process::group> pg;
   std::shared_ptr<Waiter> waiter;
-  bool running = false;
+  std::atomic_bool running = false;
 
 public:
   explicit Executor(const model::Config &cfg)
