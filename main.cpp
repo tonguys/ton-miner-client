@@ -59,7 +59,7 @@ std::string parseGPU(std::vector<int> &result_gpus, std::string_view gpuRange) {
     }
 
     const auto dash = range.find('-');
-    if (dash == std::basic_string_view<char>::npos) {
+    if (dash == std::basic_string<char>::npos) {
       return "dash is missed";
     }
     if (dash == 0) {
