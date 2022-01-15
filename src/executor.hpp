@@ -1,5 +1,4 @@
 #include <atomic>
-#include <filesystem>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -10,6 +9,8 @@
 #include "boost/fiber/condition_variable.hpp"
 #include "boost/fiber/mutex.hpp"
 #include "boost/process/group.hpp"
+#include "boost/filesystem.hpp"
+#include "boost/core/ignore_unused.hpp"
 #include "fmt/core.h"
 #include "models.hpp"
 
@@ -93,7 +94,8 @@ struct Ok {
 
 using ExecRes = std::variant<Timeout, Crash, Ok>;
 
-inline std::string Dump([[maybe_unused]] const Timeout &time) {
+inline std::string Dump(const Timeout &time) {
+  boost::ignore_unused(time);
   return fmt::format("Timeout{{}}");
 }
 
@@ -110,8 +112,8 @@ inline std::string Dump(const Ok &ok) {
 class Executor {
 private:
   const long factor;
-  const std::filesystem::path path;
-  std::filesystem::path result_path;
+  const boost::filesystem::path path;
+  boost::filesystem::path result_path;
   inline static const char *const resName = "mined.boc";
 
   std::shared_ptr<boost::process::group> pg;
@@ -121,7 +123,7 @@ private:
 public:
   explicit Executor(const model::Config &cfg)
       : factor(cfg.boostFactor), path(cfg.miner) {
-    result_path = std::filesystem::current_path() / resName;
+    result_path = boost::filesystem::current_path() / resName;
   };
 
   ~Executor() = default;

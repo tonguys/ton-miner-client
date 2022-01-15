@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   long factor = 64;
   bool showHelp = false;
 
-  auto currentDirectory = std::filesystem::current_path();
+  auto currentDirectory = boost::filesystem::current_path();
   auto miner = currentDirectory / "pow-miner-cuda";
   std::string gpuRange = "[0-0]";
 

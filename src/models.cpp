@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "boost/core/ignore_unused.hpp"
 #include "cppcodec/base64_rfc4648.hpp"
 #include "fmt/core.h"
 #include "fmt/format.h"
@@ -21,7 +22,8 @@ std::string Dump(const Err &e) {
                      e.body.value_or("(no body)"));
 }
 
-std::string Dump([[maybe_unused]] const Ok &ok) {
+std::string Dump(const Ok &ok) {
+  boost::ignore_unused(ok);
   // we will not print body, as internal json
   // 1) Possibly may contain sensitive info
   // 2) Likely will be logged after json unpacking to struct

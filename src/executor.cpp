@@ -11,7 +11,7 @@
 #include <atomic>
 #include <chrono>
 #include <exception>
-#include <filesystem>
+#include "boost/filesystem.hpp"
 #include <fstream>
 #include <future>
 #include <ios>
@@ -239,7 +239,7 @@ void Executor::Stop() {
 
 bool Executor::answerExists() {
   spdlog::trace("Checking {} path answer", result_path.string());
-  return std::filesystem::exists(result_path);
+  return boost::filesystem::exists(result_path);
 }
 
 std::vector<model::Answer::Byte> Executor::getAnswer() {

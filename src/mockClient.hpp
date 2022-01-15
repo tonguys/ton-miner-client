@@ -1,6 +1,8 @@
 #include <chrono>
 #include <string_view>
 
+#include "boost/core/ignore_unused.hpp"
+
 #include "client.hpp"
 
 #ifndef MACK_CLIENT_HPP
@@ -32,8 +34,11 @@ private:
   std::string url;
 
 public:
-  explicit MockClient([[maybe_unused]] std::string_view url,
-                      [[maybe_unused]] std::string_view token){};
+  explicit MockClient(std::string_view url,
+                      std::string_view token){
+                        boost::ignore_unused(url);
+                        boost::ignore_unused(token);
+                      };
   ~MockClient() final = default;
 
 private:
@@ -42,7 +47,8 @@ private:
   };
   std::optional<model::Task> doGetTask() final { return defaultTask(); };
   std::optional<model::AnswerStatus>
-  doSendAnswer([[maybe_unused]] const model::Answer &answer) final {
+  doSendAnswer(const model::Answer &answer) final {
+    boost::ignore_unused(answer);
     return defaultAnswerStatus();
   };
 };

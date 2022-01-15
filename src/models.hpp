@@ -2,7 +2,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <filesystem>
+#include "boost/filesystem.hpp"
 #include <map>
 #include <optional>
 #include <string>
@@ -117,7 +117,7 @@ struct Config {
   std::string token;
   std::string url;
   spdlog::level::level_enum logLevel;
-  std::filesystem::path miner;
+  boost::filesystem::path miner;
   long boostFactor;
   long long iterations;
   std::vector<int> gpu;
@@ -196,17 +196,17 @@ public:
 };
 
 class MinerPathOption {
-  std::filesystem::path miner;
+  boost::filesystem::path miner;
 
 public:
   void Set(Config &cfg) { cfg.miner = std::move(miner); }
 
-  MinerPathOption &operator=(std::filesystem::path path) {
+  MinerPathOption &operator=(boost::filesystem::path path) {
     miner = std::move(path);
     return *this;
   }
   MinerPathOption &operator=(std::string_view path) {
-    return *this = std::filesystem::path(path);
+    return *this = boost::filesystem::path(path);
   }
 };
 
