@@ -1,8 +1,8 @@
+#include "boost/filesystem.hpp"
 #include <cassert>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include "boost/filesystem.hpp"
 #include <map>
 #include <optional>
 #include <string>
@@ -206,7 +206,7 @@ public:
     return *this;
   }
   MinerPathOption &operator=(std::string_view path) {
-    return *this = boost::filesystem::path(path);
+    return *this = boost::filesystem::path(path.data());
   }
 };
 

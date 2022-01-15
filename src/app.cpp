@@ -1,4 +1,3 @@
-#include "boost/filesystem.hpp"
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -13,6 +12,7 @@
 #include "httpClient.hpp"
 #include "mockClient.hpp"
 
+#include "boost/filesystem.hpp"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
 
