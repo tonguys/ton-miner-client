@@ -243,7 +243,7 @@ bool Executor::answerExists() {
 }
 
 std::vector<model::Answer::Byte> Executor::getAnswer() {
-  std::ifstream file(result_path, std::ios::binary | std::ios::in);
+  std::ifstream file(result_path.c_str(), std::ios::binary | std::ios::in);
   return std::vector<model::Answer::Byte>(std::istreambuf_iterator<char>(file),
                                           std::istreambuf_iterator<char>());
 }
