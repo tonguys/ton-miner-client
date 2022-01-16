@@ -1,10 +1,13 @@
 [requires]
 cpp-httplib/0.9.10
 openssl/1.1.1k
-nlohmann_json/3.10.4
+nlohmann_json/3.10.5
 fmt/8.0.1
 spdlog/1.9.2
 boost/1.77.0
+cppcodec/0.2
+lyra/1.6.0
+ms-gsl/3.1.0
 
 [generators]
 cmake
