@@ -19,7 +19,7 @@
 ## <a name="Софт">Установка ПО.</a>
 
 Первое, что необходимо сделать, это:
-  1. Перейдите к официальному telegram-боту [@tongues_pool_bot](https://t.me/tonguys_pool_bot)
+  1. Перейдите к официальному telegram-боту [@tonguys_pool_bot](https://t.me/tonguys_pool_bot)
   2. В боте настройте адрес своего TON-кошелька
   3. Также в боте получите `id-token`
  
