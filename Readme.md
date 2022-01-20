@@ -20,23 +20,23 @@
 
 Первое, что необходимо сделать, это:
   1. Перейдите к официальному telegram-боту [@tonguys_pool_bot](https://t.me/tonguys_pool_bot)
-  2. В боте настройте адрес своего TON-кошелька
-  3. Также в боте получите `id-token`
+  2. В боте настройте адрес своего TON-кошелька(это необходимо только при выводе TON-ов)
+  3. Также в боте необходимо получить `auth-token`
  
  Дальнешие дейтвия зависят от платформы на которой вы собираетесь майнить.
  ### Windows 
-  4. Скачайте и распакуйте [архив](https://www.tonguys.com/)
-  5. Введите свой `id-token` в поле для токена
+  1. Скачайте и распакуйте [архив](https://www.tonguys.com/)
+  5. Введите свой `auth-token` в поле для токена
   6. Выберите свои настройки, которые предпочтилельнее для вас. 
   7. Запускайте майнер.
 
 ### Hive-os
-  4. перейдите во вкладку flight sheets и создайте новый
+  1. Перейдите во вкладку flight sheets и создайте новый
   5. Выберите валюту и кошелёк
-  6. в поле pool установите значение configure in miner
-  7. в поле miner выберите custom
-  8. нажмите на кнопку Setup Miner Config
-  9. в открывшемся окне введите данные значения:
+  6. В поле pool установите значение configure in miner
+  7. В поле miner выберите custom
+  8. Нажмите на кнопку Setup Miner Config
+  9. В открывшемся окне введите данные значения:
   
     * Install Url: https://github.com/tonguys/tonguys-hiveos/releases/download/v0.0.1_betta/tonguys_pool-0.0.1_beta.tar.gz
     
@@ -52,27 +52,12 @@
     
     * token=<токен из бота>
     
-    * gpus=[1, 2-4]
+    * gpus=[1,2-4]
     
 ### Ubuntu
-  4. скачайте [архив](https://github.com/tonguys/ton-miner-client/releases/download/0.0.1-alpha.2/ton-miner-client-opencl-ubuntu-18.04-x86-64.tar.gz) с исполняемым CLi файлом
+  1. Скачайте [архив](https://github.com/tonguys/ton-miner-client/releases/download/0.0.1-alpha.2/ton-miner-client-opencl-ubuntu-18.04-x86-64.tar.gz) с исполняемым CLi файлом
  `wget https://github.com/tonguys/ton-miner-client/releases/download/0.0.1-alpha.2/ton-miner-client-opencl-ubuntu-18.04-x86-64.tar.gz`
   5. распакуйте скачанный архив и перейдтие в дирректорию
-`tar xvf miningPoolCli-unix-x86–64.tar.gz ` 
+`tar xvf ton-miner-client-opencl-ubuntu-18.04-x86-64.tar.gz` 
   6. Присоединяйтесь к пулу и начинайте манить
-`chmod +x miningPoolCli &&./miningPoolCli -auth-key=<ваш id-token>`
-
-
-## <a name="Этапы">Следующие этапы развития.</a>
-
-1.Сделать графический интерфейс для пользователя
-2.Реализовать возможность обратной связи путем голосования с помощью блокчейна TON. 
-
-
-
-
-
-
-
-
-
+`chmod +x tonguysClient &&./tonguysClient --auth-token=<ваш id-token>`
