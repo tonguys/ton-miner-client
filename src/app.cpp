@@ -13,43 +13,63 @@
 #include "mockClient.hpp"
 
 #include "boost/filesystem.hpp"
-#include "spdlog/common.h"
-#include "spdlog/spdlog.h"
 #include "nlohmann/json.hpp"
+#include "spdlog/common.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 namespace crypto {
 
 void printStatistic(std::optional<model::Statistic> st_opt) {
   try {
-  static int count = 0;
-  if (!st_opt) {
-    spdlog::warn("No statistic parsed");
-    return;
-  }
+    static int count = 0;
+    if (!st_opt) {
+      spdlog::warn("No statistic parsed");
+      return;
+    }
 
-  count++;
-  auto st = st_opt.value();
-  st.count = count;
-  nlohmann::json j = st;
-  spdlog::info("JSON STATISTIC: {}", j.dump());
+    count++;
+    auto st = st_opt.value();
+    st.count = count;
+    nlohmann::json j = st;
+    spdlog::info("JSON STATISTIC: {}", j.dump());
   } catch (...) {
     spdlog::warn("Cant print statistic");
   }
 }
 
+void configureLogger(const model::Config &cfg) {
+  std::vector<spdlog::sink_ptr> sinks;
+  sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_st>());
+  sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
+      cfg.logPath.c_str(), 1024 * 1024, 10, false));
+
+  auto log = std::make_shared<spdlog::logger>("client", std::begin(sinks),
+                                              std::end(sinks));
+  std::string jsonpattern = {
+      "{\"time\": \"%Y-%m-%dT%H:%M:%S.%f%z\", \"name\": \"%n\", \"level\": "
+      "\"%^%l%$\", \"thread\": %t, \"message\": \"%v\"}"};
+  log->set_pattern(jsonpattern);
+
+  spdlog::register_logger(log);
+  spdlog::set_default_logger(log);
+}
+
 int App::Run(const model::Config &cfg) {
-  spdlog::set_level(cfg.logLevel);
   if (running.load()) {
     spdlog::critical("Starting already running App");
     throw std::runtime_error("Already started");
   }
-  spdlog::info("Starting with {}", cfg);
   running.store(true);
+
+  configureLogger(cfg);
+  spdlog::info("Starting with {}", cfg);
 
   this->exec = std::make_unique<Executor>(cfg);
 
   std::unique_ptr<Client> client =
-      std::make_unique<mock::MockClient>(cfg.url, cfg.token);
+      std::make_unique<HTTPClient>(cfg.url, cfg.token);
 
   auto auth = client->Register();
   if (!auth) {

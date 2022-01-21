@@ -60,7 +60,8 @@ public:
   Timestamp() = default;
   explicit Timestamp(long unix_timestamp) : unixTime(unix_timestamp) {}
   explicit Timestamp(time::time_point<time::steady_clock> tp) {
-    unixTime = time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
+    unixTime =
+        time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
   }
 
   Timestamp &operator=(const Timestamp &) = default;
@@ -123,13 +124,14 @@ struct Config {
   std::string token;
   std::string url;
   spdlog::level::level_enum logLevel;
+  boost::filesystem::path logPath;
   boost::filesystem::path miner;
   long boostFactor;
   long long iterations;
   std::vector<int> gpu;
 
   // NOTE: DONT FORGET TO INCRIMENT IN CASE OF ADDING OPTIONS
-  static constexpr int numberOfField = 7;
+  static constexpr int numberOfField = 8;
 
   template <class... Args> explicit constexpr Config(Args... args) {
     static_assert(sizeof...(args) == numberOfField,
@@ -201,6 +203,21 @@ public:
   }
 };
 
+class LogPathOption {
+  boost::filesystem::path miner;
+
+public:
+  void Set(Config &cfg) { cfg.logPath = std::move(miner); }
+
+  LogPathOption &operator=(boost::filesystem::path path) {
+    miner = std::move(path);
+    return *this;
+  }
+  LogPathOption &operator=(std::string_view path) {
+    return *this = boost::filesystem::path(path.data());
+  }
+};
+
 class MinerPathOption {
   boost::filesystem::path miner;
 
@@ -255,6 +272,7 @@ public:
 inline TokenOption Token;
 inline UrlOption Url;
 inline LogLevelOption LogLevel;
+inline LogPathOption LogPath;
 inline MinerPathOption MinerPath;
 inline BoostFactorOption BoostFactor;
 inline IterationsOption Iterations;

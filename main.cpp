@@ -104,27 +104,31 @@ int main(int argc, char *argv[]) {
   bool showHelp = false;
 
   auto currentDirectory = boost::filesystem::current_path();
+  auto logPath = currentDirectory / "client.log";
   auto miner = currentDirectory / "pow-miner-cuda";
   std::string gpuRange = "[0-0]";
 
-  auto cli = lyra::help(showHelp) |
-             lyra::opt(token, "token")["-t"]["--token"](
-                 "Your token, get it using bot https://t.me/tonguys_pool_bot")
-                 .required() |
-             lyra::opt(url, "url")["-u"]["--url"](
-                 fmt::format("Server url (default to {})", url))
-                 .optional() |
-             lyra::opt(logLevel, "logLevel")["-l"]["--level"]("Log level")
-                 .optional()
-                 .choices("trace", "debug", "info", "err") |
-             lyra::opt(miner, "miner")["-m"]["--miner"]("Path to ton miner")
-                 .optional() |
-             lyra::opt(factor, "factor")["-F"]["--boost-factor"]("Boost factor")
-                 .optional() |
-             lyra::opt(gpuRange, "gpuRange")["-G"]["--gpu-range"](
-                 "Devices range: [0-2,4,7-9] will use #0,#1,#2,#4,#7,#8,#9; "
-                 "[0,3] is #0,#3; [0] is #0")
-                 .optional();
+  auto cli =
+      lyra::help(showHelp) |
+      lyra::opt(token, "token")["-t"]["--token"](
+          "Your token, get it using bot https://t.me/tonguys_pool_bot")
+          .required() |
+      lyra::opt(url, "url")["-u"]["--url"](
+          fmt::format("Server url (default to {})", url))
+          .optional() |
+      lyra::opt(logLevel, "logLevel")["-l"]["--level"]("Log level")
+          .optional()
+          .choices("trace", "debug", "info", "err") |
+      lyra::opt(logPath, "logPath")["-L"]["--log-path"]("Path to log file")
+          .optional() |
+      lyra::opt(miner, "miner")["-m"]["--miner"]("Path to ton miner")
+          .optional() |
+      lyra::opt(factor, "factor")["-F"]["--boost-factor"]("Boost factor")
+          .optional() |
+      lyra::opt(gpuRange, "gpuRange")["-G"]["--gpu-range"](
+          "Devices range: [0-2,4,7-9] will use #0,#1,#2,#4,#7,#8,#9; "
+          "[0,3] is #0,#3; [0] is #0")
+          .optional();
 
   auto result = cli.parse({argc, argv});
   if (!result) {
@@ -149,7 +153,7 @@ int main(int argc, char *argv[]) {
   crypto::App app;
   return app.Run(crypto::model::Config(
       model::Token = std::move(token), model::Url = std::move(url),
-      model::LogLevel = logLevel, model::MinerPath = std::move(miner),
-      model::BoostFactor = factor, model::GPU = std::move(gpu),
-      model::Iterations = iterations));
+      model::LogLevel = logLevel, model::LogPath = logPath,
+      model::MinerPath = std::move(miner), model::BoostFactor = factor,
+      model::GPU = std::move(gpu), model::Iterations = iterations));
 }

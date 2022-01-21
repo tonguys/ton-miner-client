@@ -60,12 +60,13 @@ std::string Dump(const Answer &answer) {
 
 std::string Dump(const Config &cfg) {
   // NOTE: INCREMENT AFTER UPDATING CONFIG
-  constexpr int expected = 7;
+  constexpr int expected = 8;
   static_assert(Config::numberOfField == expected, "Printer not updated");
-  return fmt::format("Config{{url:{}, logLevel:{}, token:NOT_PRINTED, miner: "
-                     "{}, boostFactor: {}, iterations: {}, gpu: [{}]}}",
-                     cfg.url, cfg.logLevel, cfg.miner, cfg.boostFactor,
-                     cfg.iterations, fmt::join(cfg.gpu, ", "));
+  return fmt::format(
+      "Config{{url:{}, logLevel:{}, logPath:{}, token:NOT_PRINTED, miner: "
+      "{}, boostFactor: {}, iterations: {}, gpu: [{}]}}",
+      cfg.url, cfg.logLevel, cfg.logPath, cfg.miner, cfg.boostFactor,
+      cfg.iterations, fmt::join(cfg.gpu, ", "));
 }
 
 void to_json(json &j, const UserInfo &info) {
