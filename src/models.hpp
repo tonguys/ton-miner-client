@@ -54,13 +54,13 @@ namespace time = std::chrono;
 
 class Timestamp {
 private:
-  long unix;
+  long unixTime;
 
 public:
   Timestamp() = default;
-  explicit Timestamp(long unix_timestamp) : unix(unix_timestamp) {}
+  explicit Timestamp(long unix_timestamp) : unixTime(unix_timestamp) {}
   explicit Timestamp(time::time_point<time::steady_clock> tp) {
-    unix = time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
+    unixTime = time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
   }
 
   Timestamp &operator=(const Timestamp &) = default;
@@ -69,13 +69,18 @@ public:
   Timestamp(Timestamp &&) = default;
   ~Timestamp() = default;
 
-  long GetUnix() const { return unix; }
+  long GetUnix() const { return unixTime; }
   auto GetChrono() const {
-    return time::time_point<time::steady_clock>{time::seconds{unix}};
+    return time::time_point<time::steady_clock>{time::seconds{unixTime}};
   }
 };
 
 } // namespace util
+
+struct Statistic {
+  int count;
+  long long rate;
+};
 
 // get/task
 struct Task {
@@ -96,6 +101,7 @@ struct Answer {
   using Byte = uint8_t;
   std::vector<Byte> boc;
   std::string giver_address;
+  std::optional<Statistic> statistic;
 };
 
 struct MinerTask : Task {
@@ -276,6 +282,9 @@ void from_json(const json &j, AnswerStatus &status);
 
 void to_json(json &j, const Answer &answer);
 void from_json(const json &j, Answer &answer);
+
+void to_json(json &j, const Statistic &st);
+void from_json(const json &j, Statistic &st);
 
 template <class T>
 inline typename std::enable_if<

@@ -96,6 +96,10 @@ exec_res::ExecRes Executor::execSafe(const model::MinerTask &task, int gpu) {
   return res;
 }
 
+std::optional<model::Statistic> parseStatistic(std::string_view out) {
+  return std::nullopt;
+}
+
 exec_res::ExecRes Executor::exec(const model::MinerTask &task, int gpu) {
   boost::asio::io_service ios;
   std::future<std::string> outData;
@@ -136,6 +140,7 @@ exec_res::ExecRes Executor::exec(const model::MinerTask &task, int gpu) {
   model::Answer answer;
   answer.giver_address = task.giver_address;
   answer.boc = getAnswer();
+  answer.statistic = parseStatistic(out);
   spdlog::debug(answer);
   return exec_res::Ok{answer};
 }

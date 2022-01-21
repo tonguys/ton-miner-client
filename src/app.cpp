@@ -15,8 +15,27 @@
 #include "boost/filesystem.hpp"
 #include "spdlog/common.h"
 #include "spdlog/spdlog.h"
+#include "nlohmann/json.hpp"
 
 namespace crypto {
+
+void printStatistic(std::optional<model::Statistic> st_opt) {
+  try {
+  static int count = 0;
+  if (!st_opt) {
+    spdlog::warn("No statistic parsed");
+    return;
+  }
+
+  count++;
+  auto st = st_opt.value();
+  st.count = count;
+  nlohmann::json j = st;
+  spdlog::info("JSON STATISTIC: {}", j.dump());
+  } catch (...) {
+    spdlog::warn("Cant print statistic");
+  }
+}
 
 int App::Run(const model::Config &cfg) {
   spdlog::set_level(cfg.logLevel);
@@ -58,6 +77,8 @@ int App::Run(const model::Config &cfg) {
     if (res) {
       spdlog::debug("Found answer: {}", Dump(res.value()));
       model::Answer answer = res->answer;
+      printStatistic(answer.statistic);
+
       spdlog::debug("Sending answer");
       auto status = client->SendAnswer(answer);
       if (!status) {
