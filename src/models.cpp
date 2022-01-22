@@ -147,5 +147,4 @@ void from_json(const json &j, Statistic &st) {
   j["count"].get_to(st.count);
   j["rate"].get_to(st.rate);
 }
-
 } // namespace crypto::model

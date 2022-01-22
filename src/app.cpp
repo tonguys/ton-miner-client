@@ -98,7 +98,6 @@ int App::Run(const model::Config &cfg) {
       spdlog::debug("Found answer: {}", Dump(res.value()));
       model::Answer answer = res->answer;
       printStatistic(answer.statistic);
-
       spdlog::debug("Sending answer");
       auto status = client->SendAnswer(answer);
       if (!status) {
