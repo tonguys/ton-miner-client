@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  const long long iterations = 100000000000;
+  const long long iterations = 1000000000000000;
   crypto::App app;
   return app.Run(crypto::model::Config(
       model::Token = std::move(token), model::Url = std::move(url),
