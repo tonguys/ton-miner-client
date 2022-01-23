@@ -54,13 +54,14 @@ namespace time = std::chrono;
 
 class Timestamp {
 private:
-  long unix;
+  long unixTime;
 
 public:
   Timestamp() = default;
-  explicit Timestamp(long unix_timestamp) : unix(unix_timestamp) {}
+  explicit Timestamp(long unix_timestamp) : unixTime(unix_timestamp) {}
   explicit Timestamp(time::time_point<time::steady_clock> tp) {
-    unix = time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
+    unixTime =
+        time::duration_cast<time::seconds>(tp.time_since_epoch()).count();
   }
 
   Timestamp &operator=(const Timestamp &) = default;
@@ -69,13 +70,18 @@ public:
   Timestamp(Timestamp &&) = default;
   ~Timestamp() = default;
 
-  long GetUnix() const { return unix; }
+  long GetUnix() const { return unixTime; }
   auto GetChrono() const {
-    return time::time_point<time::steady_clock>{time::seconds{unix}};
+    return time::time_point<time::steady_clock>{time::seconds{unixTime}};
   }
 };
 
 } // namespace util
+
+struct Statistic {
+  int count;
+  long long rate;
+};
 
 // get/task
 struct Task {
@@ -96,6 +102,7 @@ struct Answer {
   using Byte = uint8_t;
   std::vector<Byte> boc;
   std::string giver_address;
+  std::optional<Statistic> statistic;
 };
 
 struct MinerTask : Task {
@@ -117,13 +124,14 @@ struct Config {
   std::string token;
   std::string url;
   spdlog::level::level_enum logLevel;
+  boost::filesystem::path logPath;
   boost::filesystem::path miner;
   long boostFactor;
   long long iterations;
   std::vector<int> gpu;
 
   // NOTE: DONT FORGET TO INCRIMENT IN CASE OF ADDING OPTIONS
-  static constexpr int numberOfField = 7;
+  static constexpr int numberOfField = 8;
 
   template <class... Args> explicit constexpr Config(Args... args) {
     static_assert(sizeof...(args) == numberOfField,
@@ -195,6 +203,21 @@ public:
   }
 };
 
+class LogPathOption {
+  boost::filesystem::path miner;
+
+public:
+  void Set(Config &cfg) { cfg.logPath = std::move(miner); }
+
+  LogPathOption &operator=(boost::filesystem::path path) {
+    miner = std::move(path);
+    return *this;
+  }
+  LogPathOption &operator=(std::string_view path) {
+    return *this = boost::filesystem::path(path.data());
+  }
+};
+
 class MinerPathOption {
   boost::filesystem::path miner;
 
@@ -249,6 +272,7 @@ public:
 inline TokenOption Token;
 inline UrlOption Url;
 inline LogLevelOption LogLevel;
+inline LogPathOption LogPath;
 inline MinerPathOption MinerPath;
 inline BoostFactorOption BoostFactor;
 inline IterationsOption Iterations;
@@ -276,6 +300,9 @@ void from_json(const json &j, AnswerStatus &status);
 
 void to_json(json &j, const Answer &answer);
 void from_json(const json &j, Answer &answer);
+
+void to_json(json &j, const Statistic &st);
+void from_json(const json &j, Statistic &st);
 
 template <class T>
 inline typename std::enable_if<
